@@ -14,7 +14,7 @@ class TempUserData:
 
     def temp_data(self, user_id):
         if user_id not in self.__user_data.keys():
-            self.__user_data.update({user_id: [None, [], None]})
+            self.__user_data.update({user_id: [None, [], None, [None], None, None, None, None, None, None, None, None, None, None, None]}) #3/0 - никнейм, 4 - капча, 5 - адрес емэйл, 6 - код отправленный на емэйл, 7 - bs64 аватарка, 8 - пароль, 9 - день рождения, 10 - город проживания
         return self.__user_data
 
 

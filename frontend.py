@@ -1,6 +1,7 @@
 #####################################
 #            Created by             #
 #                SBR                #
+#               zzsxd               #
 #####################################
 from telebot import types
 #####################################
@@ -24,3 +25,13 @@ class Bot_inline_btns:
             keyboard.add(product_catalog)
         return keyboard
 
+    def reg_btns(self):
+        reg = types.InlineKeyboardButton('Зарегестрироваться', callback_data='reg')
+        self.__markup.add(reg)
+        return self.__markup
+
+    def email_btns(self):
+        y = types.InlineKeyboardButton('Да!', callback_data='y')
+        n = types.InlineKeyboardButton('Нет!', callback_data='n')
+        self.__markup.add(y, n)
+        return self.__markup
