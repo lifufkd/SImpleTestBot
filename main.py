@@ -27,38 +27,6 @@ questions_name = 'questions.json'
 #####################################
 
 
-def get_random_question(user_id):
-    temp = list()
-    for i in config.get_questions().keys():
-        if i not in temp_user_data.temp_data(user_id)[user_id][1]:
-            temp.append(i)
-    random_question = random.choice(temp)
-    temp_user_data.temp_data(user_id)[user_id][1].append(random_question)
-
-
-def get_answers(question):
-    return config.get_questions()[question]
-
-
-def check_end(user_id):
-    if len(config.get_questions().values()) <= len(temp_user_data.temp_data(user_id)[user_id][1]):
-        return True
-
-
-def clener(user_id):
-    print('123')
-    temp_user_data.temp_data(user_id)[user_id][1] = copy.deepcopy([])
-    temp_user_data.temp_data(user_id)[user_id][2] = 0
-
-
-def next_question(user_id):
-    buttons = Bot_inline_btns()
-    get_random_question(user_id)
-    bot.send_message(user_id, temp_user_data.temp_data(user_id)[user_id][1][-1],
-                     reply_markup=buttons.questions(get_answers(temp_user_data.temp_data(user_id)[user_id][1][-1])),
-                     parse_mode='html')
-
-
 def generate_captcha(user_id):
     alphavet = ['1', '2', '3', '4', '5', '6', '7', '8', 'a', 'b', 'd', 'e', 'g', 'h', 'i', 'j', 'n', 'q', 't', 'y', 'A',
                 'D',
@@ -67,9 +35,7 @@ def generate_captcha(user_id):
     for i in range(5):
         pattern += choice(alphavet)
     print(pattern)
-    temp_user_data.temp_data(user_id)[user_id][0] = 4
-    temp_user_data.temp_data(user_id)[user_id][4] = pattern
-
+    temp_user_data.temp_data(user_id)[user_id][1] = pattern
     image_captcha = ImageCaptcha(width=300, height=200)
     image_captcha.write(pattern, 'captcha.png')
 
@@ -78,17 +44,17 @@ def bot_captcha(user_id):
     generate_captcha(user_id)
     captcha_img = open('captcha.png', 'rb')
     bot.send_photo(user_id, captcha_img, 'Подтверди капчу:')
-    temp_user_data.temp_data(user_id)[user_id][0] = 6
+    temp_user_data.temp_data(user_id)[user_id][0] = 3
 
 
 def send_email(user_id):
     sender = config.get_config()['email_login']
     password = config.get_config()['email_pass']
     code_in_msg = str(random.randint(a=111111, b=999999))
-    temp_user_data.temp_data(user_id)[user_id][6] = code_in_msg
+    temp_user_data.temp_data(user_id)[user_id][2] = code_in_msg
     message = str(f'Ваш код подтверждения: {code_in_msg}')
     msg = MIMEText(message)
-    email = temp_user_data.temp_data(user_id)[user_id][5]
+    email = temp_user_data.temp_data(user_id)[user_id][10]
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.starttls()
     try:
@@ -97,17 +63,6 @@ def send_email(user_id):
         return True
     except Exception as _ex:
         return False
-
-
-def check_day_birthday(user_id, user_input):
-    try:
-        datetime.strptime(user_input, '%d.%m.%Y')
-        bot.send_message(user_id, 'День рождения подтвержден')
-        temp_user_data.temp_data(user_id)[user_id][9] = user_input
-    except Exception as e:
-        print(e)
-        temp_user_data.temp_data(user_id)[user_id][0] = 8
-        bot.send_message(user_id, 'Неправильный ввод!')
 
 
 def main():
@@ -132,71 +87,72 @@ def main():
         code = temp_user_data.temp_data(user_id)[user_id][0]
         if db_actions.user_is_existed(user_id):
             match code:
-                case 4:
+                case 0:
                     if user_input is not None:
-                        temp_user_data.temp_data(user_id)[user_id][3][0] = user_input
-                        bot.send_message(user_id, 'Отправьте вашу аватарку')
-                        temp_user_data.temp_data(user_id)[user_id][0] = 5
+                        temp_user_data.temp_data(user_id)[user_id][4] = user_input
+                        bot.send_message(user_id, 'Придумайте пароль')
+                        temp_user_data.temp_data(user_id)[user_id][0] = 1
                     else:
-                        bot.send_message(user_id, 'Не вверный ввод')
-                case 5:
+                        bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
+                case 1:
+                    if user_input is not None:
+                        temp_user_data.temp_data(user_id)[user_id][5] = user_input
+                        bot.send_message(user_id, 'Выберите аватарку')
+                        temp_user_data.temp_data(user_id)[user_id][0] = 2
+                    else:
+                        bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
+                case 2:
                     if user_photo is not None:
                         photo_id = user_photo[-1].file_id
                         photo_file = bot.get_file(photo_id)
                         photo_to_bs64 = base64.b64encode(bot.download_file(photo_file.file_path)).decode('latin1')
-                        temp_user_data.temp_data(user_id)[user_id][7] = photo_to_bs64
-                        bot.send_message(user_id, 'Аватарка успешно загружена')
+                        temp_user_data.temp_data(user_id)[user_id][6] = photo_to_bs64
                         bot_captcha(user_id)
                     else:
-                        bot.send_message(user_id, 'Это не фотография')
-                case 6:
-                    if user_input == temp_user_data.temp_data(user_id)[user_id][4]:
-                        bot.send_message(user_id, 'Вы подтвердили капчу')
-                        bot.send_message(user_id, 'Придумайте пароль')
-                        temp_user_data.temp_data(user_id)[user_id][0] = 7
+                        bot.send_message(user_id, 'Это не фотография! Попробуйте ещё раз')
+                case 3:
+                    if user_input == temp_user_data.temp_data(user_id)[user_id][1]:
+                        bot.send_message(user_id, 'Введите ФИО')
+                        temp_user_data.temp_data(user_id)[user_id][0] = 4
                     else:
                         bot.send_message(user_id, 'Капча не подтверждена')
                         bot_captcha(user_id)
+                case 4:
+                    if user_input is not None:
+                        temp_user_data.temp_data(user_id)[user_id][7] = user_input
+                        bot.send_message(user_id, 'Введите дату рождения (в формате дд.мм.гггг (12.12.2012))')
+                        temp_user_data.temp_data(user_id)[user_id][0] = 5
+                    else:
+                        bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
+                case 5:
+                    if user_input is not None:
+                        try:
+                            temp_user_data.temp_data(user_id)[user_id][8] = datetime.strptime(user_input, '%d.%m.%Y')
+                            temp_user_data.temp_data(user_id)[user_id][0] = 6
+                            bot.send_message(user_id, 'Введите город проживания')
+                        except:
+                            bot.send_message(user_id, 'Дата указана в неправильном формате! Попробуйте ещё раз')
+                    else:
+                        bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
+                case 6:
+                    if user_input is not None:
+                        temp_user_data.temp_data(user_id)[user_id][9] = user_input
+                        temp_user_data.temp_data(user_id)[user_id][0] = 7
+                        bot.send_message(user_id, 'Введите E-mail')
+                    else:
+                        bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
                 case 7:
                     if user_input is not None:
-                        temp_user_data.temp_data(user_id)[user_id][8] = user_input
-                        bot.send_message(user_id, 'Введите ФИО')
-                        temp_user_data.temp_data(user_id)[user_id][0] = 8
-                    else:
-                        bot.send_message(user_id, 'Не вверный ввод')
-                case 8:
-                    if user_input is not None:
-                        bot.send_message(user_id, 'Введите дату рождения (в формате дд.мм.гггг (12.12.2012))')
-                        temp_user_data.temp_data(user_id)[user_id][0] = 9
-                    else:
-                        bot.send_message(user_id, 'Не вверный ввод')
-                case 9:
-                    if user_input is not None:
-                        check_day_birthday(user_id, user_input)
-                        bot.send_message(user_id, 'Введите город проживания')
-                        temp_user_data.temp_data(user_id)[user_id][0] = 10
-                    else:
-                        bot.send_message(user_id, 'Не вверный ввод')
-                case 10:
-                    if user_input is not None:
                         temp_user_data.temp_data(user_id)[user_id][10] = user_input
-                        bot.send_message(user_id, 'Введите E-mail')
-                        temp_user_data.temp_data(user_id)[user_id][0] = 11
-                    else:
-                        bot.send_message(user_id, 'Не вверный ввод')
-                case 11:
-                    if user_input is not None:
-                        temp_user_data.temp_data(user_id)[user_id][5] = user_input
                         if send_email(user_id):
-                            temp_user_data.temp_data(user_id)[user_id][0] = 12
-                            bot.send_message(user_id, 'Введите код подтвержения с вашей почты')
+                            temp_user_data.temp_data(user_id)[user_id][0] = 8
+                            bot.send_message(user_id, 'Введите код подтверждения с вашей почты')
                         else:
-                            temp_user_data.temp_data(user_id)[user_id][0] = 10
-                            bot.send_message(user_id, 'Не вверный ввод ')
+                            bot.send_message(user_id, 'Произошла ошибка. Введите адрес почты ещё раз')
                     else:
-                        bot.send_message(user_id, 'Не вверный ввод')
-                case 12:
-                    if user_input == temp_user_data.temp_data(user_id)[user_id][6]:
+                        bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
+                case 8:
+                    if user_input == temp_user_data.temp_data(user_id)[user_id][2]:
                         bot.send_message(user_id, 'Вы успешно зарегестировались!')
                     else:
                         bot.send_message(user_id, 'Код не верный, попробуйте еще раз!\n\n'
@@ -208,32 +164,12 @@ def main():
         user_id = call.message.chat.id
         buttons = Bot_inline_btns()
         if db_actions.user_is_existed(user_id):
-            if command == 'start':
-                print('123')
-                clener(user_id)
-                next_question(user_id)
-            elif command[:8] == 'question':
-                answers_stat = list()
-                data = get_answers(temp_user_data.temp_data(user_id)[user_id][1][-1])
-                for i in data:
-                    answers_stat.append(i[2])
-                if answers_stat[int(command[8:])]:
-                    temp_user_data.temp_data(user_id)[user_id][2] += 1
-                    bot.send_message(user_id, f'Правильный ответ!!!\n\n{data[int(command[8:])][1]}', parse_mode='html')
-                else:
-                    bot.send_message(user_id, f'Неправильный ответ\n\n{data[int(command[8:])][1]}', parse_mode='html')
-                if check_end(user_id):
-                    db_actions.write_statistic(temp_user_data.temp_data(user_id)[user_id][2], user_id)
-                    clener(user_id)
-                    bot.send_message(user_id, 'Пройти ещё раз', reply_markup=buttons.start_buttons(), parse_mode='html')
-                else:
-                    next_question(user_id)
-            elif command == 'reg':
+            if command == 'reg':
+                temp_user_data.temp_data(user_id)[user_id][0] = 0
                 bot.send_message(user_id, 'Введите свой никнейм')
-                temp_user_data.temp_data(user_id)[user_id][0] = 4
             elif command == 'y':
+                temp_user_data.temp_data(user_id)[user_id][0] = 7
                 bot.send_message(user_id, 'Введите E-mail')
-                temp_user_data.temp_data(user_id)[user_id][0] = 11
             elif command == 'n':
                 send_email(user_id)
                 bot.send_message(user_id, 'Введите код подтвержения с вашей почты')
