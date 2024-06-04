@@ -35,3 +35,19 @@ class Bot_inline_btns:
         n = types.InlineKeyboardButton('Нет!', callback_data='n')
         self.__markup.add(y, n)
         return self.__markup
+
+    def question_btns(self):
+        f = types.InlineKeyboardButton('Работаю по найму', callback_data='question0')
+        s = types.InlineKeyboardButton('Являюсь самозанятым, ИП или основателем ООО (АО)', callback_data='question1')
+        t = types.InlineKeyboardButton('Не работаю, получаю социальные пособия', callback_data='question2')
+        o = types.InlineKeyboardButton('Я пенсионер', callback_data='question3')
+        k = types.InlineKeyboardButton('Я учусь', callback_data='question4')
+        self.__markup.add(f, s, t, o, k)
+        return self.__markup
+
+    def second_question(self):
+        f = types.InlineKeyboardButton('У меня низкий доход', callback_data='vopros0')
+        s = types.InlineKeyboardButton('Я ищу партнеров для совместных проектов', callback_data='vopros1')
+        t = types.InlineKeyboardButton('Я инвестор, могу приобретать активы', callback_data='vopros2')
+        self.__markup.add(f, s, t)
+        return self.__markup

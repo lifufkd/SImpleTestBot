@@ -9,6 +9,7 @@ import platform
 import telebot
 import copy
 import random
+from amocrm.v2 import tokens
 from datetime import datetime
 from email.mime.text import MIMEText
 from captcha.image import ImageCaptcha
@@ -151,9 +152,19 @@ def main():
                 case 8:
                     if user_input == temp_user_data.temp_data(user_id)[user_id][2]:
                         bot.send_message(user_id, 'Вы успешно зарегестировались!')
+                        bot.send_message(user_id, 'Укажите вашу занятость', reply_markup=buttons.question_btns())
                     else:
                         bot.send_message(user_id, 'Код не верный, попробуйте еще раз!\n\n'
                                                   'Вы хотите поменять адрес почты?', reply_markup=buttons.email_btns())
+                case 9:
+                    if user_input is not None:
+                        temp_user_data.temp_data(user_id)[user_id][17] = user_input
+                        temp_user_data.temp_data(user_id)[user_id][0] = 10
+                        bot.send_message(user_id, 'Какая наиболее важная экологическая проблема для Вас?')
+                case 10:
+                    if user_input is not None:
+                        temp_user_data.temp_data(user_id)[user_id][18] = user_input
+                        bot.send_message(user_id, 'Поздравляю, вы успешно прошли тест')
 
     @bot.callback_query_handler(func=lambda call: True)
     def callback(call):
@@ -170,6 +181,15 @@ def main():
             elif command == 'n':
                 send_email(user_id)
                 bot.send_message(user_id, 'Введите код подтвержения с вашей почты')
+            elif command[:8] == 'question':
+                messages = ['Работаю по найму', 'Являюсь самозанятым, ИП или основателем ООО (АО)', 'Не работаю, получаю социальные пособия', 'Я пенсионер', 'Я учусь']
+                temp_user_data.temp_data(user_id)[user_id][15] = messages[int(command[8:])]
+                bot.send_message(user_id, 'Установите вашу категорию', reply_markup=buttons.second_question())
+            elif command[:6] == 'vopros':
+                answers = ['Я малоимущий и пассивный пользователь', 'Мне необходимо активное сотрудничество в группе для совместного роста доходов, улучшения уровня жизни, развития бизнеса и благотворительности', 'Я являюсь инвестором, могу приобретать цифровые финансовые активы у других подписчиков и конвертировать для роста прибыли.']
+                temp_user_data.temp_data(user_id)[user_id][16] = answers[int(command[6:])]
+                temp_user_data.temp_data(user_id)[user_id][0] = 9
+                bot.send_message(user_id, 'Какая наиболее важная социальная проблема для вас?')
 
     bot.polling(none_stop=True)
 
@@ -178,8 +198,8 @@ if '__main__' == __name__:
     os_type = platform.system()
     config = ConfigParser(config_name)
     temp_user_data = TempUserData()
-    # db = DB(config.get_config()['db_file_name'], Lock())
-    db_actions = DbAct(config)
+    db = DB(config.get_config()['db_file_name'], Lock())
+    db_actions = DbAct(db, config)
     if config.get_config()['generate_token']:
         db_actions.generate_tokens()
     bot = telebot.TeleBot(config.get_config()['tg_api'])
