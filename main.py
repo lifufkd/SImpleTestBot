@@ -21,9 +21,6 @@ from frontend import Bot_inline_btns
 
 #####################################
 config_name = 'secrets.json'
-questions_name = 'questions.json'
-
-
 #####################################
 
 
@@ -179,9 +176,11 @@ def main():
 
 if '__main__' == __name__:
     os_type = platform.system()
-    config = ConfigParser(config_name, questions_name)
+    config = ConfigParser(config_name)
     temp_user_data = TempUserData()
-    db = DB(config.get_config()['db_file_name'], Lock())
-    db_actions = DbAct(db, config)
+    # db = DB(config.get_config()['db_file_name'], Lock())
+    db_actions = DbAct(config)
+    if config.get_config()['generate_token']:
+        db_actions.generate_tokens()
     bot = telebot.TeleBot(config.get_config()['tg_api'])
     main()
