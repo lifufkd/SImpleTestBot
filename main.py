@@ -144,7 +144,8 @@ def main():
             case 5:
                 if user_input is not None:
                     try:
-                        temp_user_data.temp_data(user_id)[user_id][8] = datetime.strptime(user_input, '%d.%m.%Y').date()
+                        datetime.strptime(user_input, '%d.%m.%Y').date()
+                        temp_user_data.temp_data(user_id)[user_id][8] = user_input
                         temp_user_data.temp_data(user_id)[user_id][0] = 6
                         bot.send_message(user_id, 'Введите город проживания')
                     except:
@@ -184,6 +185,7 @@ def main():
             case 10:
                 if user_input is not None:
                     temp_user_data.temp_data(user_id)[user_id][14] = user_input
+                    print(temp_user_data.temp_data(user_id)[user_id])
                     db_actions.add_user(user_id, user_nickname, upload_image_to_imgur(temp_user_data.temp_data(user_id)[user_id][6], config.get_config()['imgur_client_id']), temp_user_data.temp_data(user_id)[user_id][4:])
                     bot.send_message(user_id, 'Поздравляю, вы успешно прошли тест')
                 else:
@@ -226,3 +228,4 @@ if '__main__' == __name__:
         db_actions.generate_tokens()
     bot = telebot.TeleBot(config.get_config()['tg_api'])
     main()
+

@@ -22,7 +22,7 @@ class TempUserData:
 
 
 class AmoCrmLead(_Lead):
-    tg_id = custom_field.NumericCustomField("tg_id")
+    telegram_id = custom_field.NumericCustomField("telegram_id")
     telegram_contact = custom_field.TextCustomField("telegram_contact")
     user_fio = custom_field.DateCustomField("user_fio")
     user_birthdate = custom_field.TextCustomField("user_birthdate")
@@ -57,7 +57,7 @@ class DbAct:
         temp = list()
         users = AmoCrmLead.objects.all()
         for i in users:
-            temp.append(i.tg_id)
+            temp.append(i.telegram_id)
         if user_id in temp:
             return True
 
@@ -71,7 +71,7 @@ class DbAct:
     def add_user(self, tg_id, tg_contact, user_photo, data):
         lead = AmoCrmLead.objects.create()
         lead.name = data[3]
-        lead.tg_id = tg_id
+        lead.telegram_id = tg_id
         lead.telegram_contact = tg_contact
         lead.user_fio = data[3]
         lead.user_email = data[6]
