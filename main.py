@@ -70,8 +70,7 @@ def send_email(user_id):
     message = str(f'Ваш код подтверждения: {code_in_msg}')
     msg = MIMEText(message)
     email = temp_user_data.temp_data(user_id)[user_id][10]
-    server = smtplib.SMTP("smtp.gmail.com", 587)
-    server.starttls()
+    server = smtplib.SMTP_SSL("smtp.mail.ru", 465)
     try:
         server.login(sender, password)
         server.sendmail(sender, email, msg.as_string())
