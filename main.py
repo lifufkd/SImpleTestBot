@@ -84,11 +84,11 @@ def main():
     def start_message(message):
         command = message.text.replace('/', '')
         user_id = message.chat.id
+        print(user_id)
         buttons = Bot_inline_btns()
         if db_actions.user_is_existed(user_id):
             if command == 'start':
-                bot.send_message(user_id, 'Приветствую! Вы уже зарегистрированы',
-                                 reply_markup=buttons.reg_btns())
+                bot.send_message(user_id, 'Приветствую! Вы уже зарегистрированы')
                 # bot.send_message(user_id, 'Пройти тест', reply_markup=buttons.start_buttons(), parse_mode='html')
         else:
             bot.send_message(user_id, 'Для начала Вам необходимо зарегестрироваться в боте!⬇️⬇️⬇️',
