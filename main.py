@@ -49,7 +49,6 @@ def generate_captcha(user_id):
     pattern = str()
     for i in range(5):
         pattern += choice(alphavet)
-    print(pattern)
     temp_user_data.temp_data(user_id)[user_id][1] = pattern
     image_captcha = ImageCaptcha(width=300, height=200)
     image_captcha.write(pattern, 'captcha.png')
@@ -84,14 +83,29 @@ def main():
     def start_message(message):
         command = message.text.replace('/', '')
         user_id = message.chat.id
-        print(user_id)
         buttons = Bot_inline_btns()
         if db_actions.user_is_existed(user_id):
             if command == 'start':
-                bot.send_message(user_id, 'Приветствую! Вы уже зарегистрированы')
+                bot.send_message(user_id, 'Добро пожаловать в чат-бот опроса подписчиков - граждан России!\n\n'
+                                          'Честные, реальные ответы на вопросы чат-бота дают подписчикам права на:\n\n'
+                                          '1. Сотрудничество в ReFi проекте для роста своих доходов, улучшения уровня жизни, исправления социального неравенства.\n\n'
+                                          '2. Ежемесячное получение и накопление системных ценных токенов в своих личных кабинетах.\n\n'
+                                          '3. Совместную с партнерами и инвесторами конвертацию и продажу полученных цифровых активов.\n\n'
+                                          '4. Направление выручки от продажи токенов на решение заявленных социальных, экологических, финансовых и иных проблем подписчиков.\n\n'
+                                          '5. Коллективные инвестиции в свои региональные проекты и в программы развития экономики России.\n\n'
+                                          '6. Создание общей децентрализованной экосистемы учета, управления и роста активов и капиталов подписчиков.\n\n'
+                                          '7. Обеспечение постоянной и массовой благотворительной поддержки нуждающихся граждан России.', reply_markup=buttons.reg_btns())
                 # bot.send_message(user_id, 'Пройти тест', reply_markup=buttons.start_buttons(), parse_mode='html')
         else:
-            bot.send_message(user_id, 'Для начала Вам необходимо зарегестрироваться в боте!⬇️⬇️⬇️',
+            bot.send_message(user_id, 'Добро пожаловать в чат-бот опроса подписчиков - граждан России!\n\n'
+                                          'Честные, реальные ответы на вопросы чат-бота дают подписчикам права на:\n\n'
+                                          '1. Сотрудничество в ReFi проекте для роста своих доходов, улучшения уровня жизни, исправления социального неравенства.\n\n'
+                                          '2. Ежемесячное получение и накопление системных ценных токенов в своих личных кабинетах.\n\n'
+                                          '3. Совместную с партнерами и инвесторами конвертацию и продажу полученных цифровых активов.\n\n'
+                                          '4. Направление выручки от продажи токенов на решение заявленных социальных, экологических, финансовых и иных проблем подписчиков.\n\n'
+                                          '5. Коллективные инвестиции в свои региональные проекты и в программы развития экономики России.\n\n'
+                                          '6. Создание общей децентрализованной экосистемы учета, управления и роста активов и капиталов подписчиков.\n\n'
+                                          '7. Обеспечение постоянной и массовой благотворительной поддержки нуждающихся граждан России.',
                              reply_markup=buttons.reg_btns())
 
     @bot.message_handler(content_types=['text', 'photo'])
@@ -155,7 +169,7 @@ def main():
                 if user_input is not None:
                     temp_user_data.temp_data(user_id)[user_id][9] = user_input
                     temp_user_data.temp_data(user_id)[user_id][0] = 7
-                    bot.send_message(user_id, 'Введите E-mail')
+                    bot.send_message(user_id, 'Введите вашу дейстующую электронную почту')
                 else:
                     bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
             case 7:
@@ -184,12 +198,21 @@ def main():
             case 10:
                 if user_input is not None:
                     temp_user_data.temp_data(user_id)[user_id][14] = user_input
-                    print(temp_user_data.temp_data(user_id)[user_id])
                     db_actions.add_user(user_id, user_nickname, upload_image_to_imgur(temp_user_data.temp_data(user_id)[user_id][6], config.get_config()['imgur_client_id']), temp_user_data.temp_data(user_id)[user_id][4:])
-                    bot.send_message(user_id, 'Поздравляю, вы успешно прошли тест')
+                    temp_user_data.temp_data(user_id)[user_id][0] = 11
+                    bot.send_message(user_id, 'Иная наиболее важная проблема для Вас?')
                 else:
                     bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
-
+            case 11:
+                if user_input is not None:
+                    temp_user_data.temp_data(user_id)[user_id][15] = user_input
+                    bot.send_message(user_id, 'Предварительный опрос завершен, спасибо вам!\n\n'
+                                              'Для роста ваших доходов и решения проблем вы можете участвовать в одном из Телеграм сообществ проекта:\n\n'
+                                              '1. https://t.me/basic_digital_income - при вашем выборе пассивного участия.\n\n'
+                                              '2. https://t.me/wonderful_partners - при вашем выборе активного партнерства предпринимателей.\n\n'
+                                              '3. https://t.me/wonderful_investors - при выборе ваших инвестиций в цифровые активы и криптовалюты.')
+                else:
+                    bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
     @bot.callback_query_handler(func=lambda call: True)
     def callback(call):
         command = call.data
