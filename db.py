@@ -22,20 +22,20 @@ class DB:
             self.__cursor = self.__db.cursor()
             self.__cursor.execute('''
             CREATE TABLE users(
-            row_id INTEGER primary key autoincrement not null,
-            user_id INTEGER,
-            first_name TEXT,
-            last_name TEXT,
-            nick_name TEXT,
-            is_admin BOOL,
-            UNIQUE(user_id)
+                row_id INTEGER primary key autoincrement not null,
+                user_id INTEGER,
+                first_name TEXT,
+                last_name TEXT,
+                nick_name TEXT,
+                is_admin BOOL,
+                UNIQUE(user_id)
             )
             ''')
             self.__cursor.execute('''
-            CREATE TABLE statistic(
-            row_id INTEGER primary key autoincrement not null,
-            user_id INTEGER,
-            balls TEXT
+            CREATE TABLE groups(
+                row_id INTEGER primary key autoincrement not null,
+                chat_id INTEGER,
+                message_id INTEGER
             )
             ''')
             self.__db.commit()

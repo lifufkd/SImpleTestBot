@@ -39,9 +39,9 @@ class AmoCrmLead(_Lead):
 
 
 class DbAct:
-    def __init__(self, config):
+    def __init__(self, config, db):
         super(DbAct, self).__init__()
-        # self.__db = db
+        self.__db = db
         self.__config = config
         self.init()
 
@@ -61,9 +61,6 @@ class DbAct:
             temp.append(i.telegram_id)
         if user_id in temp:
             return True
-
-    def send_email(self):
-        pass
 
     def generate_tokens(self):
         tokens.default_token_manager.init(code=self.__config.get_config()['amocrm_temp_code'], skip_error=True)
@@ -88,40 +85,38 @@ class DbAct:
         lead.user_most_important_problem = data[11]
         lead.save()
 
-    # def add_user(self, user_id, first_name, last_name, nick_name):
-    #     if not self.user_is_existed(user_id):
-    #         if user_id in self.__config.get_config()['admins']:
-    #             is_admin = True
-    #         else:
-    #             is_admin = False
-    #         self.__db.db_write('INSERT INTO users (user_id, first_name, last_name, nick_name, is_admin) VALUES (?, ?, ?, ?, ?)', (user_id, first_name, last_name, nick_name, is_admin))
-    #
-    # def user_is_existed(self, user_id):
-    #     data = self.__db.db_read('SELECT count(*) FROM users WHERE user_id = ?', (user_id, ))
-    #     if len(data) > 0:
-    #         if data[0][0] > 0:
-    #             status = True
-    #         else:
-    #             status = False
-    #         return status
-    #
-    # def user_is_admin(self, user_id):
-    #     data = self.__db.db_read('SELECT is_admin FROM users WHERE user_id = ?', (user_id, ))
-    #     if len(data) > 0:
-    #         if data[0][0] == 1:
-    #             status = True
-    #         else:
-    #             status = False
-    #         return status
-    #
-    # def check_statistic_existed(self, user_id):
-    #     data = self.__db.db_read('SELECT COUNT(*) FROM statistic WHERE user_id = ?', (user_id, ))
-    #     if len(data[0]) > 0:
-    #         if data[0][0] > 0:
-    #             return True
-    #
-    # def write_statistic(self, balls, user_id):
-    #     if self.check_statistic_existed(user_id):
-    #         self.__db.db_write('UPDATE statistic SET balls = ? WHERE user_id = ?', (balls, user_id))
-    #     else:
-    #         self.__db.db_write('INSERT INTO statistic (user_id, balls) VALUES(?, ?)', (balls, user_id))
+    def add_group(self, data):
+        self.__db.db_write('INSERT INTO groups (chat_id, message_id) VALUES(?, ?)', data)
+
+    def get_groups(self):
+        return self.__db.db_read('SELECT chat_id, message_id FROM groups', ())
+
+    def update_group(self, message_id, chat_id):
+        self.__db.db_write('UPDATE groups SET message_id = ? WHERE chat_id = ?', (message_id, chat_id))
+
+    def add_user_local(self, user_id, first_name, last_name, nick_name):
+        if not self.user_is_existed_local(user_id):
+            if user_id in self.__config.get_config()['admins']:
+                is_admin = True
+            else:
+                is_admin = False
+            self.__db.db_write('INSERT INTO users (user_id, first_name, last_name, nick_name, is_admin) VALUES (?, ?, ?, ?, ?)', (user_id, first_name, last_name, nick_name, is_admin))
+
+    def user_is_existed_local(self, user_id):
+        data = self.__db.db_read('SELECT count(*) FROM users WHERE user_id = ?', (user_id, ))
+        if len(data) > 0:
+            if data[0][0] > 0:
+                status = True
+            else:
+                status = False
+            return status
+
+    def user_is_admin_local(self, user_id):
+        data = self.__db.db_read('SELECT is_admin FROM users WHERE user_id = ?', (user_id, ))
+        if len(data) > 0:
+            if data[0][0] == 1:
+                status = True
+            else:
+                status = False
+            return status
+

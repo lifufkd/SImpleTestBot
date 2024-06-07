@@ -30,6 +30,16 @@ class Bot_inline_btns:
         self.__markup.add(reg)
         return self.__markup
 
+    def admin_btns(self):
+        reg = types.InlineKeyboardButton('Добавить группу', callback_data='add_group')
+        self.__markup.add(reg)
+        return self.__markup
+
+    def group_btn(self, bot_link):
+        reg = types.InlineKeyboardButton('Регистрация подписчика', url=bot_link)
+        self.__markup.add(reg)
+        return self.__markup
+
     def email_btns(self):
         y = types.InlineKeyboardButton('Да!', callback_data='y')
         n = types.InlineKeyboardButton('Нет!', callback_data='n')
