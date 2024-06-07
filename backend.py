@@ -35,6 +35,7 @@ class AmoCrmLead(_Lead):
     user_category = custom_field.TextCustomField("user_category")
     user_social_problem = custom_field.TextCustomField("user_social_problem")
     user_environmental_problem = custom_field.TextCustomField("user_environmental_problem")
+    user_most_important_problem = custom_field.TextCustomField("user_most_important_problem")
 
 
 class DbAct:
@@ -84,6 +85,7 @@ class DbAct:
         lead.user_category = data[8]
         lead.user_social_problem = data[9]
         lead.user_environmental_problem = data[10]
+        lead.user_most_important_problem = data[11]
         lead.save()
 
     # def add_user(self, user_id, first_name, last_name, nick_name):

@@ -69,8 +69,8 @@ def send_email(user_id):
     message = str(f'Ваш код подтверждения: {code_in_msg}')
     msg = MIMEText(message)
     email = temp_user_data.temp_data(user_id)[user_id][10]
-    server = smtplib.SMTP_SSL("smtp.mail.ru", 465)
     try:
+        server = smtplib.SMTP_SSL("smtp.mail.ru", 465)
         server.login(sender, password)
         server.sendmail(sender, email, msg.as_string())
         return True
@@ -184,7 +184,7 @@ def main():
                     bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
             case 8:
                 if user_input == temp_user_data.temp_data(user_id)[user_id][2]:
-                    bot.send_message(user_id, 'Вы успешно зарегестировались!\nУкажите вашу занятость', reply_markup=buttons.question_btns())
+                    bot.send_message(user_id, 'Укажите вашу занятость', reply_markup=buttons.question_btns())
                 else:
                     bot.send_message(user_id, 'Код не верный, попробуйте еще раз!\n\n'
                                               'Вы хотите поменять адрес почты?', reply_markup=buttons.email_btns())
@@ -198,7 +198,6 @@ def main():
             case 10:
                 if user_input is not None:
                     temp_user_data.temp_data(user_id)[user_id][14] = user_input
-                    db_actions.add_user(user_id, user_nickname, upload_image_to_imgur(temp_user_data.temp_data(user_id)[user_id][6], config.get_config()['imgur_client_id']), temp_user_data.temp_data(user_id)[user_id][4:])
                     temp_user_data.temp_data(user_id)[user_id][0] = 11
                     bot.send_message(user_id, 'Иная наиболее важная проблема для Вас?')
                 else:
@@ -206,6 +205,13 @@ def main():
             case 11:
                 if user_input is not None:
                     temp_user_data.temp_data(user_id)[user_id][15] = user_input
+                    try:
+                        db_actions.add_user(user_id, user_nickname,
+                                            upload_image_to_imgur(temp_user_data.temp_data(user_id)[user_id][6],
+                                                                  config.get_config()['imgur_client_id']),
+                                            temp_user_data.temp_data(user_id)[user_id][4:])
+                    except:
+                        pass
                     bot.send_message(user_id, 'Предварительный опрос завершен, спасибо вам!\n\n'
                                               'Для роста ваших доходов и решения проблем вы можете участвовать в одном из Телеграм сообществ проекта:\n\n'
                                               '1. https://t.me/basic_digital_income - при вашем выборе пассивного участия.\n\n'

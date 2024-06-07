@@ -26,7 +26,7 @@ class Bot_inline_btns:
         return keyboard
 
     def reg_btns(self):
-        reg = types.InlineKeyboardButton('Зарегестрироваться', callback_data='reg')
+        reg = types.InlineKeyboardButton('Зарегистрироваться', callback_data='reg')
         self.__markup.add(reg)
         return self.__markup
 
