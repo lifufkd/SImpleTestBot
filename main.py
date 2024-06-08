@@ -67,10 +67,13 @@ def bot_captcha(user_id):
 def task():
     buttons = Bot_inline_btns()
     for i in db_actions.get_groups():
-        bot.delete_message(chat_id=i[0], message_id=i[1])
-        message_id = bot.send_photo(chat_id=i[0], photo=open('WOND.jpg', 'rb'), caption=config.get_config()['group_text'],
-                                    reply_markup=buttons.group_btn(config.get_config()['bot_link'])).message_id
-        db_actions.update_group(message_id, i[0])
+        try:
+            bot.delete_message(chat_id=i[0], message_id=i[1])
+            message_id = bot.send_photo(chat_id=i[0], photo=open('WOND.jpg', 'rb'), caption=config.get_config()['group_text'],
+                                        reply_markup=buttons.group_btn(config.get_config()['bot_link'])).message_id
+            db_actions.update_group(message_id, i[0])
+        except:
+            pass
 
 
 def job(utc_offset):
