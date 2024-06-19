@@ -3,10 +3,10 @@
 #                SBR                #
 #               zzsxd               #
 #####################################
-from amocrm.v2 import tokens, Lead as _Lead, custom_field
 import sys
-import os
 import json
+from amocrm.v2 import tokens, Lead as _Lead, custom_field, Contact, Company
+from datetime import datetime
 #####################################
 
 
@@ -17,7 +17,7 @@ class TempUserData:
 
     def temp_data(self, user_id):
         if user_id not in self.__user_data.keys():
-            self.__user_data.update({user_id: [None, None, None, [], None, None, None, None, None, None, None, None, None, None, None, None, None]}) #3/0 - никнейм, 4 - капча, 5 - адрес емэйл, 6 - код отправленный на емэйл, 7 - bs64 аватарка, 8 - пароль, 9 - день рождения, 10 - город проживания
+            self.__user_data.update({user_id: [None, None, None, [], None, None, None, None, None, None, None, None, None, None, None, None, None, None, [None, None]]}) #3/0 - никнейм, 4 - капча, 5 - адрес емэйл, 6 - код отправленный на емэйл, 7 - bs64 аватарка, 8 - пароль, 9 - день рождения, 10 - город проживания
         return self.__user_data
 
 
@@ -111,6 +111,44 @@ class DbAct:
             else:
                 status = False
             return status
+
+    def add_admin_application(self, user_id, content):
+        self.__db.db_write('INSERT INTO applications_to_admin (user_id, content, status, time) VALUES(?, ?, ?, ?)', (user_id, content, False, datetime.today().strftime('%Y-%m-%d %H:%M')))
+
+    def add_admin_application_amocrm(self):
+        contact = Contact()
+        contact.name = 'Иван Иванов'
+        contact.custom_fields_values = [
+            {
+                'field_id': 123456,  # ID пользовательского поля (например, телефон)
+                'values': [
+                    {
+                        'value': '79991234567',
+                        'enum_code': 'WORK'  # Тип номера (например, WORK, HOME)
+                    }
+                ]
+            },
+            {
+                'field_id': 654321,  # ID пользовательского поля (например, email)
+                'values': [
+                    {
+                        'value': 'ivan@example.com',
+                        'enum_code': 'WORK'  # Тип email (например, WORK, PERSONAL)
+                    }
+                ]
+            }
+        ]
+
+        # Сохранение контакта
+        contact.save()
+
+    def get_admin_application(self, user_id):
+        return self.__db.db_read('SELECT content, time, status FROM applications_to_admin WHERE user_id = ?', (user_id, ))
+
+    def user_is_authorized(self, data):
+        data = self.__db.db_read('SELECT user_id FROM applications WHERE user_nick = ? AND user_password = ?', (data[0], data[1]))
+        if len(data) > 0:
+            return True
 
     def get_admins(self):
         temp = list()

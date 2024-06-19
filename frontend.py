@@ -61,14 +61,15 @@ class Bot_inline_btns:
         a = types.InlineKeyboardButton('Мои ответы', callback_data='profile1')
         b = types.InlineKeyboardButton('Связь с администрацией', callback_data='profile2')
         c = types.InlineKeyboardButton('Добавить соц. сеть', callback_data='profile3')
-        self.__markup.add(a, b, c)
+        d = types.InlineKeyboardButton('Мои заявки', callback_data='profile4')
+        self.__markup.add(a, b, c, d)
         return self.__markup
 
     def social_networks(self):
         a = types.InlineKeyboardButton('Вконтакте', callback_data='social_networksВконтакте')
         b = types.InlineKeyboardButton('Телеграмм', callback_data='social_networksТелеграмм')
         c = types.InlineKeyboardButton('Одноклассники', callback_data='social_networksОдноклассники')
-        d = types.InlineKeyboardButton('Одноклассники', callback_data='social_networksТенчат')
+        d = types.InlineKeyboardButton('Тенчат', callback_data='social_networksТенчат')
         self.__markup.add(a, b, c, d)
         return self.__markup
 

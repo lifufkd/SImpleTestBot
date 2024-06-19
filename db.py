@@ -58,6 +58,15 @@ class DB:
                 message_id INTEGER
             )
             ''')
+            self.__cursor.execute('''
+            CREATE TABLE applications_to_admin(
+                row_id INTEGER primary key autoincrement not null,
+                user_id INTEGER,
+                content TEXT,
+                time DATETIME,
+                status BOOL
+            )
+            ''')
             self.__db.commit()
         else:
             self.__db = sqlite3.connect(self.__db_path, check_same_thread=False)

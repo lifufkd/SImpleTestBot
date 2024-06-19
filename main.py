@@ -107,6 +107,24 @@ def runner():
         time.sleep(1)
 
 
+def profile(user_id):
+    s = str()
+    buttons = Bot_inline_btns()
+    social_networks = db_actions.get_social_networks(user_id)
+    user_info = db_actions.get_user_info(user_id)
+    application = db_actions.get_application_by_user_id(user_id)
+    print(social_networks, user_info, application)
+    for name, value in social_networks.items():
+        s += f'{name} - {value}\n'
+    bot.send_message(user_id, f'Добро пожаловать <b>{application[3]}</b>!\n\n'
+                              f'Ваш ID: <b>{user_id}</b>\n\n'
+                              f'Ваш баланс: <b>{user_info[0]}</b> токенов\n\n'
+                              f'Ваш логин: <b>{application[1]}</b>\n\n'
+                              f'Ваш пароль: <b>{application[2]}</b>\n\n'
+                              f'Ваши соц. сети:\n\n{s}', parse_mode='html',
+                     reply_markup=buttons.profile_btns())
+
+
 def delete_last_message(user_id):
     bot.delete_message(user_id, temp_user_data.temp_data(user_id)[user_id][3][-1])
     temp_user_data.temp_data(user_id)[user_id][3] = temp_user_data.temp_data(user_id)[user_id][3][:-1]
@@ -125,7 +143,22 @@ def send_email(user_id):
         server.login(sender, password)
         server.sendmail(sender, email, msg.as_string())
         return True
-    except Exception as _ex:
+    except:
+        return False
+
+
+def send_email_to_admin(user_nickname, user_input):
+    sender = config.get_config()['email_login']
+    password = config.get_config()['email_pass']
+    message = str(f'Пользователь @{user_nickname} оставил заявку!\n{user_input}')
+    msg = MIMEText(message)
+    try:
+        server = smtplib.SMTP_SSL("smtp.mail.ru", 465)
+        server.login(sender, password)
+        server.sendmail(sender, sender, msg.as_string())
+        return True
+    except Exception as e:
+        print(e)
         return False
 
 
@@ -141,7 +174,6 @@ def main():
         if db_actions.user_is_existed_local(user_id) or db_actions.user_is_existed_local(chat_id):
             if db_actions.user_is_admin_local(chat_id):
                 if command == 'connect':
-                    print(user_id, chat_id)
                     message_id = bot.send_photo(chat_id=user_id, photo=open('WOND.jpg', 'rb'), caption=config.get_config()['group_text'],
                                                 reply_markup=buttons.group_btn(
                                                     config.get_config()['bot_link'])).message_id
@@ -152,22 +184,7 @@ def main():
                 elif command == 'admin':
                     bot.send_message(user_id, 'Выберите действие', reply_markup=buttons.admin_btns())
             if db_actions.user_id_registered(user_id):
-                if command == 'profile':
-                    s = str()
-                    social_networks = db_actions.get_social_networks(user_id)
-                    user_info = db_actions.get_user_info(user_id)
-                    application = db_actions.get_application_by_user_id(user_id)
-                    print(social_networks, user_info, application)
-                    for name, value in social_networks.items():
-                        s += f'{name} - {value}\n'
-                    bot.send_message(user_id, f'Добро пожаловать <b>{application[3]}</b>!\n\n'
-                                              f'Ваш ID: <b>{user_id}</b>\n\n'
-                                              f'Ваш баланс: <b>{user_info[0]}</b> токенов\n\n'
-                                              f'Ваш логин: <b>{application[1]}</b>\n\n'
-                                              f'Ваш пароль: <b>{application[2]}</b>\n\n'
-                                              f'Ваши соц. сети:\n\n{s}', parse_mode='html',
-                                     reply_markup=buttons.profile_btns())
-                elif command == 'start':
+                if command == 'start':
                     bot.send_message(user_id, 'Добро пожаловать в чат-бот опроса подписчиков - граждан России!\n\n'
                                               'Честные, реальные ответы на вопросы чат-бота дают подписчикам права на:\n\n'
                                               '1. Сотрудничество в ReFi проекте для роста своих доходов, улучшения уровня жизни, исправления социального неравенства.\n\n'
@@ -177,6 +194,12 @@ def main():
                                               '5. Коллективные инвестиции в свои региональные проекты и в программы развития экономики России.\n\n'
                                               '6. Создание общей децентрализованной экосистемы учета, управления и роста активов и капиталов подписчиков.\n\n'
                                               '7. Обеспечение постоянной и массовой благотворительной поддержки нуждающихся граждан России.')
+                elif temp_user_data.temp_data(user_id)[user_id][17]:
+                    if command == 'profile':
+                        profile(user_id)
+                else:
+                    temp_user_data.temp_data(user_id)[user_id][0] = 15
+                    bot.send_message(user_id, 'Введите логин')
             else:
                 if command == 'start':
                     bot.send_message(user_id, 'Добро пожаловать в чат-бот опроса подписчиков - граждан России!\n\n'
@@ -306,6 +329,8 @@ def main():
                     if user_input is not None:
                         temp_user_data.temp_data(user_id)[user_id][0] = None
                         admins = db_actions.get_admins()
+                        db_actions.add_admin_application(user_id, user_input)
+                        send_email_to_admin(user_nickname, user_input)
                         for i in admins:
                             bot.send_message(i, f'Пользователь @{user_nickname} оставил заявку!\n{user_input}')
                         bot.send_message(user_id, 'Ваша заявка отправлена')
@@ -317,6 +342,24 @@ def main():
                         delete_last_message(user_id)
                         db_actions.update_social_networks(user_id, temp_user_data.temp_data(user_id)[user_id][16], user_input)
                         bot.send_message(user_id, 'Соц. сеть успешно добавлена!')
+                    else:
+                        bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
+                case 15:
+                    if user_input is not None:
+                        temp_user_data.temp_data(user_id)[user_id][18][0] = user_input
+                        temp_user_data.temp_data(user_id)[user_id][0] = 16
+                        bot.send_message(user_id, 'Введите пароль')
+                    else:
+                        bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
+                case 16:
+                    if user_input is not None:
+                        temp_user_data.temp_data(user_id)[user_id][18][1] = user_input
+                        temp_user_data.temp_data(user_id)[user_id][0] = None
+                        if db_actions.user_is_authorized(temp_user_data.temp_data(user_id)[user_id][18]):
+                            profile(user_id)
+                        else:
+                            bot.send_message(user_id, 'Данные не верны')
+
                     else:
                         bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
 
@@ -331,7 +374,6 @@ def main():
                     temp_user_data.temp_data(user_id)[user_id][0] = 12
                     bot.send_message(user_id, 'Отправьте из группы команду /connect')
             if db_actions.user_id_registered(user_id):
-                print(command)
                 if command == 'profile_back':
                     delete_last_message(user_id)
                 elif command == 'write_back':
@@ -365,6 +407,21 @@ def main():
                             temp_user_data.temp_data(user_id)[user_id][3].append(message_id)
                         case '3':
                             bot.send_message(user_id, 'Выберите социальную сеть которую хотите добавить: ', reply_markup=buttons.social_networks())
+                        case '4':
+                            s = str()
+                            admin_applications = db_actions.get_admin_application(user_id)
+                            for i in admin_applications:
+                                if i[2]:
+                                    status = 'Закрыта'
+                                else:
+                                    status = 'Открыта'
+                                s += f"{'*'*20}\n" \
+                                     f"Время открытия заявки: {i[1]}\n" \
+                                     f"Тело заявки: {i[0]}\n" \
+                                     f"Статус заявки: {status}\n" \
+                                     f"{'*'*20}\n\n"
+                            message_id = bot.send_message(user_id, f"Ваши заявки: \n\n{s}", reply_markup=buttons.back_in_profile()).message_id
+                            temp_user_data.temp_data(user_id)[user_id][3].append(message_id)
 
             if command == 'reg':
                 temp_user_data.temp_data(user_id)[user_id][0] = 0
