@@ -107,6 +107,11 @@ def runner():
         time.sleep(1)
 
 
+def delete_last_message(user_id):
+    bot.delete_message(user_id, temp_user_data.temp_data(user_id)[user_id][3][-1])
+    temp_user_data.temp_data(user_id)[user_id][3] = temp_user_data.temp_data(user_id)[user_id][3][:-1]
+
+
 def send_email(user_id):
     sender = config.get_config()['email_login']
     password = config.get_config()['email_pass']
@@ -125,7 +130,7 @@ def send_email(user_id):
 
 
 def main():
-    @bot.message_handler(commands=['start', 'admin', 'connect'])
+    @bot.message_handler(commands=['start', 'admin', 'connect', 'profile'])
     def start_message(message):
         command = message.text.replace('/', '')
         user_id = message.chat.id
@@ -144,8 +149,36 @@ def main():
                     temp_user_data.temp_data(chat_id)[chat_id][0] = None
                     bot.send_message(chat_id,
                                      'Группа успешно добавлена, витрина с ботом будет перемещаться ежедневно в 00:00 по МСК')
-            if command == 'start':
-                if db_actions.user_is_existed(user_id):
+                elif command == 'admin':
+                    bot.send_message(user_id, 'Выберите действие', reply_markup=buttons.admin_btns())
+            if db_actions.user_id_registered(user_id):
+                if command == 'profile':
+                    s = str()
+                    social_networks = db_actions.get_social_networks(user_id)
+                    user_info = db_actions.get_user_info(user_id)
+                    application = db_actions.get_application_by_user_id(user_id)
+                    print(social_networks, user_info, application)
+                    for name, value in social_networks.items():
+                        s += f'{name} - {value}\n'
+                    bot.send_message(user_id, f'Добро пожаловать <b>{application[3]}</b>!\n\n'
+                                              f'Ваш ID: <b>{user_id}</b>\n\n'
+                                              f'Ваш баланс: <b>{user_info[0]}</b> токенов\n\n'
+                                              f'Ваш логин: <b>{application[1]}</b>\n\n'
+                                              f'Ваш пароль: <b>{application[2]}</b>\n\n'
+                                              f'Ваши соц. сети:\n\n{s}', parse_mode='html',
+                                     reply_markup=buttons.profile_btns())
+                elif command == 'start':
+                    bot.send_message(user_id, 'Добро пожаловать в чат-бот опроса подписчиков - граждан России!\n\n'
+                                              'Честные, реальные ответы на вопросы чат-бота дают подписчикам права на:\n\n'
+                                              '1. Сотрудничество в ReFi проекте для роста своих доходов, улучшения уровня жизни, исправления социального неравенства.\n\n'
+                                              '2. Ежемесячное получение и накопление системных ценных токенов в своих личных кабинетах.\n\n'
+                                              '3. Совместную с партнерами и инвесторами конвертацию и продажу полученных цифровых активов.\n\n'
+                                              '4. Направление выручки от продажи токенов на решение заявленных социальных, экологических, финансовых и иных проблем подписчиков.\n\n'
+                                              '5. Коллективные инвестиции в свои региональные проекты и в программы развития экономики России.\n\n'
+                                              '6. Создание общей децентрализованной экосистемы учета, управления и роста активов и капиталов подписчиков.\n\n'
+                                              '7. Обеспечение постоянной и массовой благотворительной поддержки нуждающихся граждан России.')
+            else:
+                if command == 'start':
                     bot.send_message(user_id, 'Добро пожаловать в чат-бот опроса подписчиков - граждан России!\n\n'
                                               'Честные, реальные ответы на вопросы чат-бота дают подписчикам права на:\n\n'
                                               '1. Сотрудничество в ReFi проекте для роста своих доходов, улучшения уровня жизни, исправления социального неравенства.\n\n'
@@ -155,20 +188,8 @@ def main():
                                               '5. Коллективные инвестиции в свои региональные проекты и в программы развития экономики России.\n\n'
                                               '6. Создание общей децентрализованной экосистемы учета, управления и роста активов и капиталов подписчиков.\n\n'
                                               '7. Обеспечение постоянной и массовой благотворительной поддержки нуждающихся граждан России.', reply_markup=buttons.reg_btns())
-                    # bot.send_message(user_id, 'Пройти тест', reply_markup=buttons.start_buttons(), parse_mode='html')
                 else:
-                    bot.send_message(user_id, 'Добро пожаловать в чат-бот опроса подписчиков - граждан России!\n\n'
-                                              'Честные, реальные ответы на вопросы чат-бота дают подписчикам права на:\n\n'
-                                              '1. Сотрудничество в ReFi проекте для роста своих доходов, улучшения уровня жизни, исправления социального неравенства.\n\n'
-                                              '2. Ежемесячное получение и накопление системных ценных токенов в своих личных кабинетах.\n\n'
-                                              '3. Совместную с партнерами и инвесторами конвертацию и продажу полученных цифровых активов.\n\n'
-                                              '4. Направление выручки от продажи токенов на решение заявленных социальных, экологических, финансовых и иных проблем подписчиков.\n\n'
-                                              '5. Коллективные инвестиции в свои региональные проекты и в программы развития экономики России.\n\n'
-                                              '6. Создание общей децентрализованной экосистемы учета, управления и роста активов и капиталов подписчиков.\n\n'
-                                              '7. Обеспечение постоянной и массовой благотворительной поддержки нуждающихся граждан России.',
-                                     reply_markup=buttons.reg_btns())
-            elif command == 'admin':
-                bot.send_message(user_id, 'Выберите действие', reply_markup=buttons.admin_btns())
+                    bot.send_message(user_id, 'Сначала зарегистрируйтесь! /start')
 
     @bot.message_handler(content_types=['text', 'photo'])
     def messages(message):
@@ -268,13 +289,11 @@ def main():
                 case 11:
                     if user_input is not None:
                         temp_user_data.temp_data(user_id)[user_id][15] = user_input
-                        try:
-                            db_actions.add_user(user_id, user_nickname,
-                                                upload_image_to_imgur(temp_user_data.temp_data(user_id)[user_id][6],
-                                                                      config.get_config()['imgur_client_id']),
-                                                temp_user_data.temp_data(user_id)[user_id][4:])
-                        except:
-                            pass
+                        user_photo = upload_image_to_imgur(temp_user_data.temp_data(user_id)[user_id][6],
+                                                                  config.get_config()['imgur_client_id'])
+                        db_actions.add_application(user_id, user_nickname, user_photo,
+                                            temp_user_data.temp_data(user_id)[user_id][4:])
+                        db_actions.add_application_local(user_id, user_photo, temp_user_data.temp_data(user_id)[user_id][4:])
                         temp_user_data.temp_data(user_id)[user_id][0] = None
                         bot.send_message(user_id, 'Предварительный опрос завершен, спасибо вам!\n\n'
                                                   'Для роста ваших доходов и решения проблем вы можете участвовать в одном из Телеграм сообществ проекта:\n\n'
@@ -283,6 +302,24 @@ def main():
                                                   '3. https://t.me/wonderful_investors - при выборе ваших инвестиций в цифровые активы и криптовалюты.')
                     else:
                         bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
+                case 13:
+                    if user_input is not None:
+                        temp_user_data.temp_data(user_id)[user_id][0] = None
+                        admins = db_actions.get_admins()
+                        for i in admins:
+                            bot.send_message(i, f'Пользователь @{user_nickname} оставил заявку!\n{user_input}')
+                        bot.send_message(user_id, 'Ваша заявка отправлена')
+                    else:
+                        bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
+                case 14:
+                    if user_input is not None:
+                        temp_user_data.temp_data(user_id)[user_id][0] = None
+                        delete_last_message(user_id)
+                        db_actions.update_social_networks(user_id, temp_user_data.temp_data(user_id)[user_id][16], user_input)
+                        bot.send_message(user_id, 'Соц. сеть успешно добавлена!')
+                    else:
+                        bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
+
     @bot.callback_query_handler(func=lambda call: True)
     def callback(call):
         command = call.data
@@ -293,6 +330,42 @@ def main():
                 if command == 'add_group':
                     temp_user_data.temp_data(user_id)[user_id][0] = 12
                     bot.send_message(user_id, 'Отправьте из группы команду /connect')
+            if db_actions.user_id_registered(user_id):
+                print(command)
+                if command == 'profile_back':
+                    delete_last_message(user_id)
+                elif command == 'write_back':
+                    temp_user_data.temp_data(user_id)[user_id][0] = None
+                    delete_last_message(user_id)
+                elif command[:15] == 'social_networks':
+                    temp_user_data.temp_data(user_id)[user_id][16] = command[15:]
+                    temp_user_data.temp_data(user_id)[user_id][0] = 14
+                    message_id = bot.send_message(user_id, f'Введите ссылку на свой профиль в {command[15:]}', reply_markup=buttons.cancel_write_to_admin()).message_id
+                    temp_user_data.temp_data(user_id)[user_id][3].append(message_id)
+                elif command[:7] == 'profile':
+                    match command[7:]:
+                        case '1':
+                            application = db_actions.get_application_by_user_id(user_id)
+                            caption = f'Ваше ФИО: <b>{application[3]}</b>\n\n' \
+                                      f'Ваш никнейм: <b>{application[1]}</b>\n\n' \
+                                      f'Ваш пароль: <b>{application[2]}</b>\n\n' \
+                                      f'Ваша дата рождения: <b>{application[4]}</b>\n\n' \
+                                      f'Ваш город проживания: <b>{application[5]}</b>\n\n' \
+                                      f'Ваша почта: <b>{application[6]}</b>\n\n' \
+                                      f'Ваша занятость: <b>{application[7]}</b>\n\n' \
+                                      f'Ваша категория: <b>{application[8]}</b>\n\n' \
+                                      f'Ваша наиболее важная социальная проблема: <b>{application[9]}</b>\n\n' \
+                                      f'Ваша наиболее важная экологическая проблема: <b>{application[10]}</b>\n\n' \
+                                      f'Иная наиболее важная проблема: <b>{application[11]}</b>\n'
+                            message_id = bot.send_photo(chat_id=user_id, caption=caption, reply_markup=buttons.back_in_profile(), photo=application[0], parse_mode='html').message_id
+                            temp_user_data.temp_data(user_id)[user_id][3].append(message_id)
+                        case '2':
+                            temp_user_data.temp_data(user_id)[user_id][0] = 13
+                            message_id = bot.send_message(user_id, 'Напишите свою заявку администратору', reply_markup=buttons.cancel_write_to_admin()).message_id
+                            temp_user_data.temp_data(user_id)[user_id][3].append(message_id)
+                        case '3':
+                            bot.send_message(user_id, 'Выберите социальную сеть которую хотите добавить: ', reply_markup=buttons.social_networks())
+
             if command == 'reg':
                 temp_user_data.temp_data(user_id)[user_id][0] = 0
                 bot.send_message(user_id, 'Введите свой никнейм')

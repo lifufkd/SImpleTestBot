@@ -24,11 +24,31 @@ class DB:
             CREATE TABLE users(
                 row_id INTEGER primary key autoincrement not null,
                 user_id INTEGER,
+                token_balance FLOAT,
                 first_name TEXT,
                 last_name TEXT,
                 nick_name TEXT,
                 is_admin BOOL,
                 UNIQUE(user_id)
+            )
+            ''')
+            self.__cursor.execute('''
+            CREATE TABLE applications(
+                row_id INTEGER primary key autoincrement not null,
+                user_id INTEGER,
+                user_fio TEXT,
+                user_birthday TEXT,
+                user_email TEXT,
+                user_city TEXT,
+                user_nick TEXT,
+                user_password TEXT,
+                user_photo TEXT,
+                user_employment TEXT,
+                user_category TEXT,
+                user_social_problem TEXT,
+                user_environmental_problem TEXT,
+                user_most_important_problem TEXT,
+                social_networks TEXT
             )
             ''')
             self.__cursor.execute('''

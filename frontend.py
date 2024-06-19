@@ -36,14 +36,40 @@ class Bot_inline_btns:
         return self.__markup
 
     def group_btn(self, bot_link):
+        keyboard = types.InlineKeyboardMarkup(row_width=1)
         reg = types.InlineKeyboardButton('Регистрация подписчика', url=bot_link)
-        self.__markup.add(reg)
-        return self.__markup
+        keyboard.add(reg)
+        return keyboard
 
     def email_btns(self):
         y = types.InlineKeyboardButton('Да!', callback_data='y')
         n = types.InlineKeyboardButton('Нет!', callback_data='n')
         self.__markup.add(y, n)
+        return self.__markup
+
+    def back_in_profile(self):
+        a = types.InlineKeyboardButton('вернуться назад', callback_data='profile_back')
+        self.__markup.add(a)
+        return self.__markup
+
+    def cancel_write_to_admin(self):
+        a = types.InlineKeyboardButton('Отмена', callback_data='write_back')
+        self.__markup.add(a)
+        return self.__markup
+
+    def profile_btns(self):
+        a = types.InlineKeyboardButton('Мои ответы', callback_data='profile1')
+        b = types.InlineKeyboardButton('Связь с администрацией', callback_data='profile2')
+        c = types.InlineKeyboardButton('Добавить соц. сеть', callback_data='profile3')
+        self.__markup.add(a, b, c)
+        return self.__markup
+
+    def social_networks(self):
+        a = types.InlineKeyboardButton('Вконтакте', callback_data='social_networksВконтакте')
+        b = types.InlineKeyboardButton('Телеграмм', callback_data='social_networksТелеграмм')
+        c = types.InlineKeyboardButton('Одноклассники', callback_data='social_networksОдноклассники')
+        d = types.InlineKeyboardButton('Одноклассники', callback_data='social_networksТенчат')
+        self.__markup.add(a, b, c, d)
         return self.__markup
 
     def question_btns(self):
