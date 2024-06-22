@@ -87,13 +87,21 @@ class DbAct:
         lead.save()
 
     def add_group(self, data):
-        self.__db.db_write('INSERT INTO groups (chat_id, message_id) VALUES(?, ?)', data)
+        self.__db.db_write('INSERT INTO groups (chat_id, message_id) VALUES(?, ?)', (data[0], json.dumps(data[1])))
+
+    def group_already_added(self, chat_id):
+        out = list()
+        data = self.__db.db_read('SELECT chat_id FROM groups', ())
+        for i in data:
+            out.append(i[0])
+        if chat_id in out:
+            return True
 
     def get_groups(self):
         return self.__db.db_read('SELECT chat_id, message_id FROM groups', ())
 
-    def update_group(self, message_id, chat_id):
-        self.__db.db_write('UPDATE groups SET message_id = ? WHERE chat_id = ?', (message_id, chat_id))
+    def update_group(self, chat_id, message_id):
+        self.__db.db_write('UPDATE groups SET message_id = ? WHERE chat_id = ?', (json.dumps(message_id), chat_id))
 
     def add_user_local(self, user_id, first_name, last_name, nick_name):
         if not self.user_is_existed_local(user_id):

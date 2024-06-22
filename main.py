@@ -3,6 +3,7 @@
 #                SBR                #
 #               zzsxd               #
 #####################################
+import json
 import smtplib
 import base64
 import platform
@@ -64,16 +65,31 @@ def bot_captcha(user_id):
     temp_user_data.temp_data(user_id)[user_id][0] = 3
 
 
-def task():
+def post_windshield(user_id):
     buttons = Bot_inline_btns()
+    ids = list()
+    text = split_text_by_period(config.get_config()['group_text'])
+    ids.append(bot.send_photo(chat_id=user_id, photo=open('WOND.jpg', 'rb'),
+                              caption=text[0]).message_id)
+    if len(text) > 1:
+        for index, i in enumerate(text[1:]):
+            if index + 2 != len(text):
+                ids.append(bot.send_message(chat_id=user_id, text=i).message_id)
+            else:
+                ids.append(bot.send_message(chat_id=user_id, text=i, reply_markup=buttons.group_btn(
+                    config.get_config()['bot_link'])).message_id)
+    return [user_id, ids]
+
+
+def task():
     for i in db_actions.get_groups():
         try:
-            bot.delete_message(chat_id=i[0], message_id=i[1])
-            message_id = bot.send_photo(chat_id=i[0], photo=open('WOND.jpg', 'rb'), caption=config.get_config()['group_text'],
-                                        reply_markup=buttons.group_btn(config.get_config()['bot_link'])).message_id
-            db_actions.update_group(message_id, i[0])
+            for g in json.loads(i[1]):
+                bot.delete_message(chat_id=i[0], message_id=g)
         except:
             pass
+        data = post_windshield(i[0])
+        db_actions.update_group(data[0], data[1])
 
 
 def job(utc_offset):
@@ -150,42 +166,86 @@ def send_email(user_id):
 def send_email_to_admin(user_nickname, user_input):
     sender = config.get_config()['email_login']
     password = config.get_config()['email_pass']
+    dest = config.get_config()['email_for_applications']
     message = str(f'Пользователь @{user_nickname} оставил заявку!\n{user_input}')
     msg = MIMEText(message)
     try:
         server = smtplib.SMTP_SSL("smtp.mail.ru", 465)
         server.login(sender, password)
-        server.sendmail(sender, sender, msg.as_string())
+        server.sendmail(sender, dest, msg.as_string())
         return True
     except Exception as e:
         print(e)
         return False
 
 
+def split_text_by_period(text, max_length=1024):
+    """
+    Разделяет текст на части, каждая из которых не превышает max_length символов, разделяя текст только по точкам.
+
+    :param text: str, исходный текст
+    :param max_length: int, максимальная длина части текста
+    :return: list, список частей текста
+    """
+    if len(text) <= max_length:
+        return [text]
+
+    parts = []
+    current_part = []
+
+    for sentence in text.split('.'):
+        sentence = sentence.strip() + '.'
+        if len(' '.join(current_part) + sentence) > max_length:
+            parts.append(' '.join(current_part).strip())
+            current_part = [sentence.strip()]
+        else:
+            current_part.append(sentence.strip())
+
+    # Добавляем последнюю часть, если она не пустая
+    if current_part:
+        parts.append(' '.join(current_part).strip())
+
+    # Убираем последний символ '.' у последнего элемента списка
+    if parts and parts[-1].endswith('.'):
+        parts[-1] = parts[-1][:-1]
+
+    return parts
+
+
+def add_chanel(user_id, chat_id, text, text1):
+    if not db_actions.group_already_added(user_id):
+        data = post_windshield(user_id)
+        db_actions.add_group(data)
+        temp_user_data.temp_data(chat_id)[chat_id][0] = None
+        bot.send_message(chat_id,
+                         text)
+    else:
+        bot.send_message(chat_id, text1)
+
+
 def main():
-    @bot.message_handler(commands=['start', 'admin', 'connect', 'profile'])
+    @bot.message_handler(commands=['start', 'admin', 'connect', 'profile', 'get_db', 'load_db'])
     def start_message(message):
         command = message.text.replace('/', '')
         user_id = message.chat.id
         chat_id = message.from_user.id
         buttons = Bot_inline_btns()
-        db_actions.add_user_local(user_id, message.from_user.first_name, message.from_user.last_name,
+        db_actions.add_user_local(chat_id, message.from_user.first_name, message.from_user.last_name,
                             f'@{message.from_user.username}')
-        if db_actions.user_is_existed_local(user_id) or db_actions.user_is_existed_local(chat_id):
+        if db_actions.user_is_existed_local(chat_id) or db_actions.user_is_existed_local(chat_id):
             if db_actions.user_is_admin_local(chat_id):
                 if command == 'connect':
-                    message_id = bot.send_photo(chat_id=user_id, photo=open('WOND.jpg', 'rb'), caption=config.get_config()['group_text'],
-                                                reply_markup=buttons.group_btn(
-                                                    config.get_config()['bot_link'])).message_id
-                    db_actions.add_group([user_id, message_id])
-                    temp_user_data.temp_data(chat_id)[chat_id][0] = None
-                    bot.send_message(chat_id,
-                                     'Группа успешно добавлена, витрина с ботом будет перемещаться ежедневно в 00:00 по МСК')
+                    add_chanel(user_id, chat_id, 'Группа успешно добавлена, витрина с ботом будет перемещаться ежедневно в 00:00 по МСК', 'Группа уже добавлена!')
                 elif command == 'admin':
-                    bot.send_message(user_id, 'Выберите действие', reply_markup=buttons.admin_btns())
-            if db_actions.user_id_registered(user_id):
+                    bot.send_message(chat_id, 'Выберите действие', reply_markup=buttons.admin_btns())
+                elif command == 'get_db':
+                    bot.send_document(chat_id, open(config.get_config()['db_file_name'], 'rb'))
+                elif command == 'load_db':
+                    temp_user_data.temp_data(chat_id)[chat_id][0] = 17
+                    bot.send_message(chat_id, 'Отправьте файл с БД')
+            if db_actions.user_id_registered(chat_id):
                 if command == 'start':
-                    bot.send_message(user_id, 'Добро пожаловать в чат-бот опроса подписчиков - граждан России!\n\n'
+                    bot.send_message(chat_id, 'Добро пожаловать в чат-бот опроса подписчиков - граждан России!\n\n'
                                               'Честные, реальные ответы на вопросы чат-бота дают подписчикам права на:\n\n'
                                               '1. Сотрудничество в ReFi проекте для роста своих доходов, улучшения уровня жизни, исправления социального неравенства.\n\n'
                                               '2. Ежемесячное получение и накопление системных ценных токенов в своих личных кабинетах.\n\n'
@@ -194,15 +254,15 @@ def main():
                                               '5. Коллективные инвестиции в свои региональные проекты и в программы развития экономики России.\n\n'
                                               '6. Создание общей децентрализованной экосистемы учета, управления и роста активов и капиталов подписчиков.\n\n'
                                               '7. Обеспечение постоянной и массовой благотворительной поддержки нуждающихся граждан России.')
-                elif temp_user_data.temp_data(user_id)[user_id][17]:
-                    if command == 'profile':
-                        profile(user_id)
-                else:
-                    temp_user_data.temp_data(user_id)[user_id][0] = 15
-                    bot.send_message(user_id, 'Введите логин')
+                elif command == 'profile':
+                    if temp_user_data.temp_data(chat_id)[chat_id][17]:
+                        profile(chat_id)
+                    else:
+                        temp_user_data.temp_data(chat_id)[chat_id][0] = 15
+                        bot.send_message(chat_id, 'Введите логин')
             else:
                 if command == 'start':
-                    bot.send_message(user_id, 'Добро пожаловать в чат-бот опроса подписчиков - граждан России!\n\n'
+                    bot.send_message(chat_id, 'Добро пожаловать в чат-бот опроса подписчиков - граждан России!\n\n'
                                               'Честные, реальные ответы на вопросы чат-бота дают подписчикам права на:\n\n'
                                               '1. Сотрудничество в ReFi проекте для роста своих доходов, улучшения уровня жизни, исправления социального неравенства.\n\n'
                                               '2. Ежемесячное получение и накопление системных ценных токенов в своих личных кабинетах.\n\n'
@@ -211,12 +271,11 @@ def main():
                                               '5. Коллективные инвестиции в свои региональные проекты и в программы развития экономики России.\n\n'
                                               '6. Создание общей децентрализованной экосистемы учета, управления и роста активов и капиталов подписчиков.\n\n'
                                               '7. Обеспечение постоянной и массовой благотворительной поддержки нуждающихся граждан России.', reply_markup=buttons.reg_btns())
-                else:
-                    bot.send_message(user_id, 'Сначала зарегистрируйтесь! /start')
 
-    @bot.message_handler(content_types=['text', 'photo'])
+    @bot.message_handler(content_types=['text', 'photo', 'document'])
     def messages(message):
-        user_id = message.chat.id
+        user_id = message.from_user.id
+        document = message.document
         user_nickname = message.from_user.username
         buttons = Bot_inline_btns()
         user_input = message.text
@@ -325,6 +384,17 @@ def main():
                                                   '3. https://t.me/wonderful_investors - при выборе ваших инвестиций в цифровые активы и криптовалюты.')
                     else:
                         bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
+                case 12:
+                    if user_input is not None:
+                        try:
+                            add_chanel(int(user_input), user_id,
+                                       'Канал успешно добавлен, витрина с ботом будет перемещаться ежедневно в 00:00 по МСК',
+                                       'Канал успешно добавлен!')
+                        except:
+                            temp_user_data.temp_data(user_id)[user_id][0] = None
+                            bot.send_message(user_id, 'Бот не состоит в канале с таким ID!')
+                    else:
+                        bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
                 case 13:
                     if user_input is not None:
                         temp_user_data.temp_data(user_id)[user_id][0] = None
@@ -354,6 +424,7 @@ def main():
                 case 16:
                     if user_input is not None:
                         temp_user_data.temp_data(user_id)[user_id][18][1] = user_input
+                        temp_user_data.temp_data(user_id)[user_id][17] = True
                         temp_user_data.temp_data(user_id)[user_id][0] = None
                         if db_actions.user_is_authorized(temp_user_data.temp_data(user_id)[user_id][18]):
                             profile(user_id)
@@ -362,6 +433,15 @@ def main():
 
                     else:
                         bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
+                case 17:
+                    if document is not None:
+                        file_info = bot.get_file(document.file_id)
+                        file_name = document.file_name
+                        downloaded_file = bot.download_file(file_info.file_path)
+                        with open(file_name, 'wb') as new_file:
+                            new_file.write(downloaded_file)
+                    else:
+                        bot.send_message(user_id, 'Это не файл! Попробуйте ещё раз')
 
     @bot.callback_query_handler(func=lambda call: True)
     def callback(call):
@@ -370,9 +450,15 @@ def main():
         buttons = Bot_inline_btns()
         if db_actions.user_is_existed_local(user_id):
             if db_actions.user_is_admin_local(user_id):
-                if command == 'add_group':
-                    temp_user_data.temp_data(user_id)[user_id][0] = 12
-                    bot.send_message(user_id, 'Отправьте из группы команду /connect')
+                if command == 'pre_add_group':
+                    bot.send_message(user_id, 'Что вы хотите добавить?', reply_markup=buttons.add_choise_btns())
+                if command[:9] == 'add_group':
+                    match command[9:]:
+                        case '1':
+                            bot.send_message(user_id, 'Отправьте из группы команду /connect')
+                        case '2':
+                            temp_user_data.temp_data(user_id)[user_id][0] = 12
+                            bot.send_message(user_id, 'Введите ID канала')
             if db_actions.user_id_registered(user_id):
                 if command == 'profile_back':
                     delete_last_message(user_id)
@@ -442,7 +528,7 @@ def main():
                 temp_user_data.temp_data(user_id)[user_id][0] = 9
                 bot.send_message(user_id, 'Какая наиболее важная социальная проблема для вас?')
 
-    bot.polling(none_stop=True)
+    bot.infinity_polling(timeout=10, long_polling_timeout = 5)
 
 
 if '__main__' == __name__:

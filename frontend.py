@@ -31,8 +31,14 @@ class Bot_inline_btns:
         return self.__markup
 
     def admin_btns(self):
-        reg = types.InlineKeyboardButton('Добавить группу', callback_data='add_group')
+        reg = types.InlineKeyboardButton('Добавить группу', callback_data='pre_add_group')
         self.__markup.add(reg)
+        return self.__markup
+
+    def add_choise_btns(self):
+        reg1 = types.InlineKeyboardButton('Группу', callback_data='add_group1')
+        reg2 = types.InlineKeyboardButton('Канал', callback_data='add_group2')
+        self.__markup.add(reg1, reg2)
         return self.__markup
 
     def group_btn(self, bot_link):
