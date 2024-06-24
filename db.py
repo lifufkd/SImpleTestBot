@@ -28,6 +28,7 @@ class DB:
                 first_name TEXT,
                 last_name TEXT,
                 nick_name TEXT,
+                group INTEGER,
                 is_admin BOOL,
                 UNIQUE(user_id)
             )
@@ -49,14 +50,18 @@ class DB:
                 user_environmental_problem TEXT,
                 user_most_important_problem TEXT,
                 social_networks TEXT,
-                date_airdrop_wond TEXT
+                date_airdrop_wond TEXT,
+                date_registration TEXT
             )
             ''')
             self.__cursor.execute('''
             CREATE TABLE groups(
                 row_id INTEGER primary key autoincrement not null,
+                name TEXT,
                 chat_id INTEGER,
-                message_id INTEGER
+                message_id INTEGER,
+                group BOOL,
+                chanel BOOL
             )
             ''')
             self.__cursor.execute('''

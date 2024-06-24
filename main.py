@@ -4,68 +4,34 @@
 #               zzsxd               #
 #####################################
 import json
-import smtplib
 import base64
 import platform
 import telebot
-import requests
 import threading
-import random
 import schedule
 import time
 from datetime import datetime, timedelta, timezone
-from email.mime.text import MIMEText
-from captcha.image import ImageCaptcha
-from random import choice
 from threading import Lock
 from backend import TempUserData, DbAct
 from config_parser import ConfigParser
 from db import DB
 from frontend import Bot_inline_btns
-
+from API.AmoCrm import AmoCrm
+from modules.static_modules import generate_captcha, upload_image_to_imgur, split_text_by_period, send_email_to_admin, \
+    send_email
 #####################################
 config_name = 'secrets.json'
 #####################################
 
 
-def upload_image_to_imgur(image_base64, client_id):
-    url = "https://api.imgur.com/3/upload"
-    headers = {
-        "Authorization": f"Client-ID {client_id}"
-    }
-    data = {
-        "image": base64.b64decode(image_base64),
-        "type": "file"
-    }
-    response = requests.post(url, headers=headers, files=data)
-
-    if response.status_code == 200:
-        response_data = response.json()
-        return response_data["data"]["link"]
-    else:
-        raise Exception(f"Failed to upload image: {response.status_code} {response.text}")
-
-
-def generate_captcha(user_id):
-    alphavet = ['1', '2', '3', '4', '5', '6', '7', '8', 'a', 'b', 'd', 'e', 'g', 'h', 'i', 'j', 'n', 'q', 't', 'y', 'A',
-                'D',
-                'E', 'F', 'G', 'M', 'N', 'P', 'Q', 'R']
-    pattern = str()
-    for i in range(5):
-        pattern += choice(alphavet)
-    temp_user_data.temp_data(user_id)[user_id][1] = pattern
-    image_captcha = ImageCaptcha(width=300, height=200)
-    image_captcha.write(pattern, 'captcha.png')
-
-
 def bot_captcha(user_id):
-    generate_captcha(user_id)
+    temp_user_data.temp_data(user_id)[user_id][1] = generate_captcha(user_id)
     captcha_img = open('captcha.png', 'rb')
     bot.send_photo(user_id, captcha_img, 'Подтверди капчу:')
     temp_user_data.temp_data(user_id)[user_id][0] = 3
 
 
-def post_windshield(user_id):
+def post_windshield(group_id, user_id):
     buttons = Bot_inline_btns()
     ids = list()
     text = split_text_by_period(config.get_config()['group_text'])
@@ -76,8 +42,7 @@ def post_windshield(user_id):
             if index + 2 != len(text):
                 ids.append(bot.send_message(chat_id=user_id, text=i).message_id)
             else:
-                ids.append(bot.send_message(chat_id=user_id, text=i, reply_markup=buttons.group_btn(
-                    config.get_config()['bot_link'])).message_id)
+                ids.append(bot.send_message(chat_id=user_id, text=i, reply_markup=buttons.group_btn(config.get_config()['bot_link'] + f'?start={group_id}')).message_id)
     return [user_id, ids]
 
 
@@ -88,7 +53,7 @@ def task():
                 bot.delete_message(chat_id=i[0], message_id=g)
         except:
             pass
-        data = post_windshield(i[0])
+        data = post_windshield(i[2], i[0])
         db_actions.update_group(data[0], data[1])
 
 
@@ -106,14 +71,9 @@ def schedule_job(utc_offset):
     tz = timezone(timedelta(hours=utc_offset))
     now = datetime.now(tz)
     next_run = now.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    # Если текущее время уже прошло 00:00, планируем задачу на следующий день
     if now >= next_run:
         next_run += timedelta(days=1)
-
     delay = (next_run - now).total_seconds()
-
-    # Запуск функции через указанное количество секунд
     schedule.every(int(delay)).seconds.do(job, utc_offset)
 
 
@@ -122,9 +82,10 @@ def add_airdrop_wond():
     for i in data:
         date_now = datetime.today()
         date_client = datetime.strptime(i[2], '%Y-%m-%d %H:%M')
-        if date_client + timedelta(days=30) <= date_now:
+        if date_client <= date_now:
             db_actions.update_date_airdrop_wond(date_now, i[0])
-            db_actions.update_balance(3, i[0])
+            new_balance = db_actions.update_balance(3, i[0])
+            #amocrm.update_tokens_by_user_id(new_balance, i[0])
             try:
                 bot.send_message(i[0], f'{i[1]}!\nНа ваш баланс добавлено {float(3)} airdrop WOND')
             except:
@@ -161,76 +122,11 @@ def delete_last_message(user_id):
     temp_user_data.temp_data(user_id)[user_id][3] = temp_user_data.temp_data(user_id)[user_id][3][:-1]
 
 
-def send_email(user_id):
-    sender = config.get_config()['email_login']
-    password = config.get_config()['email_pass']
-    code_in_msg = str(random.randint(a=111111, b=999999))
-    temp_user_data.temp_data(user_id)[user_id][2] = code_in_msg
-    message = str(f'Ваш код подтверждения: {code_in_msg}')
-    msg = MIMEText(message)
-    email = temp_user_data.temp_data(user_id)[user_id][10]
-    try:
-        server = smtplib.SMTP_SSL("smtp.mail.ru", 465)
-        server.login(sender, password)
-        server.sendmail(sender, email, msg.as_string())
-        return True
-    except:
-        return False
-
-
-def send_email_to_admin(user_nickname, user_input):
-    sender = config.get_config()['email_login']
-    password = config.get_config()['email_pass']
-    dest = config.get_config()['email_for_applications']
-    message = str(f'Пользователь @{user_nickname} оставил заявку!\n{user_input}')
-    msg = MIMEText(message)
-    try:
-        server = smtplib.SMTP_SSL("smtp.mail.ru", 465)
-        server.login(sender, password)
-        server.sendmail(sender, dest, msg.as_string())
-        return True
-    except Exception as e:
-        print(e)
-        return False
-
-
-def split_text_by_period(text, max_length=1024):
-    """
-    Разделяет текст на части, каждая из которых не превышает max_length символов, разделяя текст только по точкам.
-
-    :param text: str, исходный текст
-    :param max_length: int, максимальная длина части текста
-    :return: list, список частей текста
-    """
-    if len(text) <= max_length:
-        return [text]
-
-    parts = []
-    current_part = []
-
-    for sentence in text.split('.'):
-        sentence = sentence.strip() + '.'
-        if len(' '.join(current_part) + sentence) > max_length:
-            parts.append(' '.join(current_part).strip())
-            current_part = [sentence.strip()]
-        else:
-            current_part.append(sentence.strip())
-
-    # Добавляем последнюю часть, если она не пустая
-    if current_part:
-        parts.append(' '.join(current_part).strip())
-
-    # Убираем последний символ '.' у последнего элемента списка
-    if parts and parts[-1].endswith('.'):
-        parts[-1] = parts[-1][:-1]
-
-    return parts
-
-
-def add_chanel(user_id, chat_id, text, text1):
+def add_chanel(user_id, chat_id, name, is_group, text, text1):
     if not db_actions.group_already_added(user_id):
-        data = post_windshield(user_id)
-        db_actions.add_group(data)
+        row_id = db_actions.add_group(user_id, is_group)
+        data = post_windshield(row_id, user_id)
+        db_actions.update_groups(name, data[1], row_id)
         temp_user_data.temp_data(chat_id)[chat_id][0] = None
         bot.send_message(chat_id,
                          text)
@@ -245,12 +141,17 @@ def main():
         user_id = message.chat.id
         chat_id = message.from_user.id
         buttons = Bot_inline_btns()
+        if command[:5] == 'start' and len(command) > 4:
+            group = command[6:]
+            command = 'start'
+        else:
+            group = None
         db_actions.add_user_local(chat_id, message.from_user.first_name, message.from_user.last_name,
-                            f'@{message.from_user.username}')
+                                  f'@{message.from_user.username}', group)
         if db_actions.user_is_existed_local(chat_id) or db_actions.user_is_existed_local(chat_id):
             if db_actions.user_is_admin_local(chat_id):
                 if command == 'connect':
-                    add_chanel(user_id, chat_id, 'Группа успешно добавлена, витрина с ботом будет перемещаться ежедневно в 00:00 по МСК', 'Группа уже добавлена!')
+                    add_chanel(user_id, chat_id, message.chat.title, True, 'Группа успешно добавлена, витрина с ботом будет перемещаться ежедневно в 00:00 по МСК', 'Группа уже добавлена!')
                 elif command == 'admin':
                     bot.send_message(chat_id, 'Выберите действие', reply_markup=buttons.admin_btns())
                 elif command == 'get_db':
@@ -356,7 +257,9 @@ def main():
                 case 7:
                     if user_input is not None:
                         temp_user_data.temp_data(user_id)[user_id][10] = user_input
-                        if send_email(user_id):
+                        status, data = send_email(temp_user_data.temp_data(user_id)[user_id][10], config)
+                        if status:
+                            temp_user_data.temp_data(user_id)[user_id][2] = data
                             temp_user_data.temp_data(user_id)[user_id][0] = 8
                             bot.send_message(user_id, 'Введите код подтверждения с вашей почты')
                         else:
@@ -388,7 +291,8 @@ def main():
                         temp_user_data.temp_data(user_id)[user_id][15] = user_input
                         user_photo = upload_image_to_imgur(temp_user_data.temp_data(user_id)[user_id][6],
                                                                   config.get_config()['imgur_client_id'])
-                        db_actions.add_application(user_id, user_nickname, user_photo,
+                        group_info = db_actions.get_group_info_by_user_id(user_id)
+                        amocrm.add_application(user_id, user_nickname, user_photo, group_info,
                                             temp_user_data.temp_data(user_id)[user_id][4:])
                         db_actions.add_application_local(user_id, user_photo, temp_user_data.temp_data(user_id)[user_id][4:])
                         temp_user_data.temp_data(user_id)[user_id][0] = None
@@ -402,20 +306,21 @@ def main():
                 case 12:
                     if user_input is not None:
                         try:
-                            add_chanel(int(user_input), user_id,
+                            add_chanel(int(user_input), user_id, temp_user_data.temp_data(user_id)[user_id][19], False,
                                        'Канал успешно добавлен, витрина с ботом будет перемещаться ежедневно в 00:00 по МСК',
                                        'Канал успешно добавлен!')
                         except:
                             temp_user_data.temp_data(user_id)[user_id][0] = None
                             bot.send_message(user_id, 'Бот не состоит в канале с таким ID!')
                     else:
-                        bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
+                        temp_user_data.temp_data(user_id)[user_id][0] = None
+                        bot.send_message(user_id, 'Это не текст!')
                 case 13:
                     if user_input is not None:
                         temp_user_data.temp_data(user_id)[user_id][0] = None
                         admins = db_actions.get_admins()
                         db_actions.add_admin_application(user_id, user_input)
-                        send_email_to_admin(user_nickname, user_input)
+                        send_email_to_admin(user_nickname, user_input, config)
                         for i in admins:
                             bot.send_message(i, f'Пользователь @{user_nickname} оставил заявку!\n{user_input}')
                         bot.send_message(user_id, 'Ваша заявка отправлена')
@@ -457,6 +362,15 @@ def main():
                             new_file.write(downloaded_file)
                     else:
                         bot.send_message(user_id, 'Это не файл! Попробуйте ещё раз')
+                case 18:
+                    if user_input is not None:
+                        temp_user_data.temp_data(user_id)[user_id][19] = user_input
+                        temp_user_data.temp_data(user_id)[user_id][0] = 12
+                        bot.send_message(user_id, 'Введите ID канала')
+
+                    else:
+                        temp_user_data.temp_data(user_id)[user_id][0] = None
+                        bot.send_message(user_id, 'Это не текст!')
 
     @bot.callback_query_handler(func=lambda call: True)
     def callback(call):
@@ -472,8 +386,8 @@ def main():
                         case '1':
                             bot.send_message(user_id, 'Отправьте из группы команду /connect')
                         case '2':
-                            temp_user_data.temp_data(user_id)[user_id][0] = 12
-                            bot.send_message(user_id, 'Введите ID канала')
+                            temp_user_data.temp_data(user_id)[user_id][0] = 18
+                            bot.send_message(user_id, 'Введите название канала')
             if db_actions.user_id_registered(user_id):
                 if command == 'profile_back':
                     delete_last_message(user_id)
@@ -531,8 +445,10 @@ def main():
                 temp_user_data.temp_data(user_id)[user_id][0] = 7
                 bot.send_message(user_id, 'Введите E-mail')
             elif command == 'n':
-                send_email(user_id)
-                bot.send_message(user_id, 'Введите код подтвержения с вашей почты')
+                status, data = send_email(temp_user_data.temp_data(user_id)[user_id][10], config)
+                if status:
+                    temp_user_data.temp_data(user_id)[user_id][2] = data
+                    bot.send_message(user_id, 'Введите код подтвержения с вашей почты')
             elif command[:8] == 'question':
                 messages = ['Работаю по найму', 'Являюсь самозанятым, ИП или основателем ООО (АО)', 'Не работаю, получаю социальные пособия', 'Я пенсионер', 'Я учусь']
                 temp_user_data.temp_data(user_id)[user_id][11] = messages[int(command[8:])]
@@ -552,8 +468,9 @@ if '__main__' == __name__:
     temp_user_data = TempUserData()
     db = DB(config.get_config()['db_file_name'], Lock())
     db_actions = DbAct(config, db)
+    amocrm = AmoCrm(config)
     if config.get_config()['generate_token']:
-        db_actions.generate_tokens()
+        amocrm.generate_tokens()
     bot = telebot.TeleBot(config.get_config()['tg_api'])
     schedule_job(config.get_config()['timezone'])
     threading.Thread(target=runner).start()
