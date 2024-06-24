@@ -48,7 +48,8 @@ class DB:
                 user_social_problem TEXT,
                 user_environmental_problem TEXT,
                 user_most_important_problem TEXT,
-                social_networks TEXT
+                social_networks TEXT,
+                date_airdrop_wond TEXT
             )
             ''')
             self.__cursor.execute('''

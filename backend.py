@@ -109,7 +109,14 @@ class DbAct:
                 is_admin = True
             else:
                 is_admin = False
-            self.__db.db_write('INSERT INTO users (user_id, token_balance, first_name, last_name, nick_name, is_admin) VALUES (?, ?, ?, ?, ?, ?)', (user_id, 0, first_name, last_name, nick_name, is_admin))
+            self.__db.db_write('INSERT INTO users (user_id, token_balance, first_name, last_name, nick_name, is_admin) VALUES (?, ?, ?, ?, ?, ?)', (user_id, 3, first_name, last_name, nick_name, is_admin))
+
+    def get_balance(self, user_id):
+        return float(self.__db.db_read('SELECT token_balance FROM users WHERE user_id = ?', (user_id, ))[0][0])
+
+    def update_balance(self, balance, user_id):
+        old_balance = self.get_balance(user_id)
+        self.__db.db_write('UPDATE users SET token_balance = ? WHERE user_id = ?', (float(balance) + old_balance, user_id))
 
     def user_is_existed_local(self, user_id):
         data = self.__db.db_read('SELECT count(*) FROM users WHERE user_id = ?', (user_id, ))
@@ -174,14 +181,20 @@ class DbAct:
                 status = False
             return status
 
+    def get_all_application(self):
+        return self.__db.db_read('SELECT user_id, user_fio, date_airdrop_wond FROM applications', ())
+
+    def update_date_airdrop_wond(self, date_airdrop_wond, user_id):
+        self.__db.db_write('UPDATE applications SET date_airdrop_wond = ? WHERE user_id = ?', (date_airdrop_wond.strftime("%Y-%m-%d %H:%M"), user_id))
+
     def add_application_local(self, user_id, photo, data):
         social_networks = json.dumps({})
         self.__db.db_write('INSERT INTO applications '
                            '(user_id, user_photo, user_nick, user_password, user_fio, user_birthday, '
                            'user_city, user_email, user_employment, user_category, '
                            'user_social_problem, user_environmental_problem, user_most_important_problem, '
-                           'social_networks'
-                           f') VALUES("{user_id}", "{photo}", "{data[0]}", "{data[1]}", "{data[3]}", "{data[4]}", "{data[5]}", "{data[6]}", "{data[7]}", "{data[8]}", "{data[9]}", "{data[10]}", "{data[11]}", "{social_networks}")', ())
+                           'social_networks, date_airdrop_wond'
+                           f') VALUES("{user_id}", "{photo}", "{data[0]}", "{data[1]}", "{data[3]}", "{data[4]}", "{data[5]}", "{data[6]}", "{data[7]}", "{data[8]}", "{data[9]}", "{data[10]}", "{data[11]}", "{social_networks}", {datetime.today().strftime("%Y-%m-%d %H:%M")})', ())
 
     def get_social_networks(self, user_id):
         return json.loads(self.__db.db_read('SELECT social_networks FROM applications WHERE user_id = ?', (user_id, ))[0][0])

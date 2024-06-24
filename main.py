@@ -117,9 +117,24 @@ def schedule_job(utc_offset):
     schedule.every(int(delay)).seconds.do(job, utc_offset)
 
 
+def add_airdrop_wond():
+    data = db_actions.get_all_application()
+    for i in data:
+        date_now = datetime.today()
+        date_client = datetime.strptime(i[2], '%Y-%m-%d %H:%M')
+        if date_client + timedelta(days=30) <= date_now:
+            db_actions.update_date_airdrop_wond(date_now, i[0])
+            db_actions.update_balance(3, i[0])
+            try:
+                bot.send_message(i[0], f'{i[1]}!\nНа ваш баланс добавлено {float(3)} airdrop WOND')
+            except:
+                pass
+
+
 def runner():
     while True:
         schedule.run_pending()
+        add_airdrop_wond()
         time.sleep(1)
 
 
