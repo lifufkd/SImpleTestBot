@@ -34,7 +34,7 @@ class DbAct:
 
     def get_group_info_by_user_id(self, user_id):
         row_id = self.get_group_index_by_user_id(user_id)
-        return self.__db.db_read('SELECT `group`, `chanel` FROM groups WHERE row_id = ?', (row_id, ))[0]
+        return self.__db.db_read('SELECT `name`, `group`, `chanel` FROM groups WHERE row_id = ?', (row_id, ))[0]
 
     def add_group(self, chat_id, is_group):
         if is_group:

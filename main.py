@@ -35,14 +35,17 @@ def post_windshield(group_id, user_id):
     buttons = Bot_inline_btns()
     ids = list()
     text = split_text_by_period(config.get_config()['group_text'])
-    ids.append(bot.send_photo(chat_id=user_id, photo=open('WOND.jpg', 'rb'),
-                              caption=text[0]).message_id)
     if len(text) > 1:
+        ids.append(bot.send_photo(chat_id=user_id, photo=open('WOND.jpg', 'rb'),
+                                  caption=text[0]).message_id)
         for index, i in enumerate(text[1:]):
             if index + 2 != len(text):
                 ids.append(bot.send_message(chat_id=user_id, text=i).message_id)
             else:
                 ids.append(bot.send_message(chat_id=user_id, text=i, reply_markup=buttons.group_btn(config.get_config()['bot_link'] + f'?start={group_id}')).message_id)
+    else:
+        ids.append(bot.send_photo(chat_id=user_id, photo=open('WOND.jpg', 'rb'),
+                                  caption=text[0], reply_markup=buttons.group_btn(config.get_config()['bot_link'] + f'?start={group_id}')).message_id)
     return [user_id, ids]
 
 
@@ -82,7 +85,7 @@ def add_airdrop_wond():
     for i in data:
         date_now = datetime.today()
         date_client = datetime.strptime(i[2], '%Y-%m-%d %H:%M')
-        if date_client <= date_now:
+        if date_client + timedelta(days=30) <= date_now:
             db_actions.update_date_airdrop_wond(date_now, i[0])
             new_balance = db_actions.update_balance(3, i[0])
             #amocrm.update_tokens_by_user_id(new_balance, i[0])

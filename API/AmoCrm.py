@@ -67,7 +67,6 @@ class AmoCrm:
         lead.save()
 
     def add_application(self, tg_id, tg_contact, user_photo, group_info, data):
-        compare = {True: "Да", False: "Нет"}
         lead = AmoCrmLead.objects.create()
         lead.name = data[3]
         lead.WOND_tokens = 3
@@ -85,8 +84,10 @@ class AmoCrm:
         lead.user_social_problem = data[9]
         lead.user_environmental_problem = data[10]
         lead.user_most_important_problem = data[11]
-        lead.from_group = compare[group_info[0]]
-        lead.from_chanel = compare[group_info[1]]
+        if group_info[1]:
+            lead.from_group = group_info[0]
+        if group_info[2]:
+            lead.from_chanel = group_info[0]
         lead.registration_date = datetime.today().strftime('%Y-%m-%d %H:%M')
         lead.save()
 

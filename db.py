@@ -28,7 +28,7 @@ class DB:
                 first_name TEXT,
                 last_name TEXT,
                 nick_name TEXT,
-                group INTEGER,
+                `group` INTEGER,
                 is_admin BOOL,
                 UNIQUE(user_id)
             )
@@ -60,7 +60,7 @@ class DB:
                 name TEXT,
                 chat_id INTEGER,
                 message_id INTEGER,
-                group BOOL,
+                `group` BOOL,
                 chanel BOOL
             )
             ''')
