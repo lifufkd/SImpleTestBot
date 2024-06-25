@@ -44,7 +44,7 @@ class Bot_inline_btns:
     def group_btn(self, bot_link):
         keyboard = types.InlineKeyboardMarkup(row_width=1)
         reg = types.InlineKeyboardButton('Регистрация', url=bot_link)
-        reg1 = types.InlineKeyboardButton('Вход в ЛК', url=bot_link)
+        reg1 = types.InlineKeyboardButton('Вход в ЛК', url=bot_link+'profile')
         keyboard.add(reg, reg1)
         return keyboard
 

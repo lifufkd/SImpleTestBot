@@ -20,6 +20,7 @@ from API.AmoCrm import AmoCrm
 from modules.static_modules import generate_captcha, upload_image_to_imgur, split_text_by_period, send_email_to_admin, \
     send_email
 #####################################
+windshield_status = True
 config_name = 'secrets.json'
 #####################################
 
@@ -61,23 +62,17 @@ def task():
 
 
 def job(utc_offset):
-    # Получение текущего времени в указанном часовом поясе
+    global windshield_status
     tz = timezone(timedelta(hours=utc_offset))
     current_time = datetime.now(tz)
-
     # Проверка, если текущее время 00:00
     if current_time.hour == 0 and current_time.minute == 0:
-        task()
-
-
-def schedule_job(utc_offset):
-    tz = timezone(timedelta(hours=utc_offset))
-    now = datetime.now(tz)
-    next_run = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    if now >= next_run:
-        next_run += timedelta(days=1)
-    delay = (next_run - now).total_seconds()
-    schedule.every(int(delay)).seconds.do(job, utc_offset)
+        if windshield_status:
+            windshield_status = False
+            task()
+    else:
+        if not windshield_status:
+            windshield_status = True
 
 
 def add_airdrop_wond():
@@ -90,14 +85,14 @@ def add_airdrop_wond():
             new_balance = db_actions.update_balance(3, i[0])
             #amocrm.update_tokens_by_user_id(new_balance, i[0])
             try:
-                bot.send_message(i[0], f'{i[1]}!\nНа ваш баланс добавлено {float(3)} airdrop WOND')
+                bot.send_message(i[0], f'{i[1]}!\nНа ваш баланс добавлено + Airdrop WOND: 3,000 (три)')
             except:
                 pass
 
 
 def runner():
     while True:
-        schedule.run_pending()
+        job(config.get_config()['timezone'])
         add_airdrop_wond()
         time.sleep(1)
 
@@ -145,13 +140,17 @@ def main():
         chat_id = message.from_user.id
         buttons = Bot_inline_btns()
         if command[:5] == 'start' and len(command) > 4:
-            group = command[6:]
-            command = 'start'
+            data = command[6:].split('profile')
+            group = data[0]
+            if len(data) > 1:
+                command = 'profile'
+            else:
+                command = 'start'
         else:
             group = None
         db_actions.add_user_local(chat_id, message.from_user.first_name, message.from_user.last_name,
                                   f'@{message.from_user.username}', group)
-        if db_actions.user_is_existed_local(chat_id) or db_actions.user_is_existed_local(chat_id):
+        if db_actions.user_is_existed_local(chat_id):
             if db_actions.user_is_admin_local(chat_id):
                 if command == 'connect':
                     add_chanel(user_id, chat_id, message.chat.title, True, 'Группа успешно добавлена, витрина с ботом будет перемещаться ежедневно в 00:00 по МСК', 'Группа уже добавлена!')
@@ -475,7 +474,6 @@ if '__main__' == __name__:
     if config.get_config()['generate_token']:
         amocrm.generate_tokens()
     bot = telebot.TeleBot(config.get_config()['tg_api'])
-    schedule_job(config.get_config()['timezone'])
     threading.Thread(target=runner).start()
     main()
 
