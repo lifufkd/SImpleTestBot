@@ -405,7 +405,8 @@ def main():
                              f'Время отправки заявки: {i[2]}\n' \
                              f'Статус заявки: {status}\n' \
                              f'{"*"*50}\n\n'
-                    bot.send_message(user_id, s)
+                    for i in split_text_by_period(s, 4096):
+                        bot.send_message(user_id, i)
                 elif command == 'get_groups':
                     data = db_actions.get_groups_()
                     s = str()
@@ -425,19 +426,22 @@ def main():
                              f'Это группа?: {status1}\n' \
                              f'Это канал?: {status2}\n' \
                              f'{"*"*50}\n\n'
-                    bot.send_message(user_id, s)
+                    for i in split_text_by_period(s, 4096):
+                        bot.send_message(user_id, i)
                 elif command == 'get_users':
                     data = db_actions.get_users()
                     s = str()
                     for i in data:
+                        group_name = db_actions.get_group_name_by_id(i[5])
                         s += f'\n\n{"*"*50}\n' \
                              f'ID пользователя: {i[0]}\n' \
                              f'Баланс пользователя (WOND): {i[1]}\n' \
                              f'ФИО порльзователя: {i[3]} {i[2]}\n' \
                              f'Никнейм пользователя: {i[4]}\n' \
-                             f'ID группы в которой состоит пользователь: {i[5]}\n' \
+                             f'Название группы в которой состоит пользователь: {group_name}\n' \
                              f'{"*"*50}\n\n'
-                    bot.send_message(user_id, s)
+                    for i in split_text_by_period(s, 4096):
+                        bot.send_message(user_id, i)
             if db_actions.user_id_registered(user_id):
                 if command == 'profile_back':
                     delete_last_message(user_id)

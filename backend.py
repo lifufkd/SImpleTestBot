@@ -32,6 +32,13 @@ class DbAct:
     def get_group_index_by_user_id(self, user_id):
         return self.__db.db_read('SELECT `group` FROM users WHERE row_id = ?', (user_id, ))[0][0]
 
+    def get_group_name_by_id(self, row_id):
+        data = self.__db.db_read('SELECT name FROM groups WHERE row_id = ?', (row_id, ))
+        if len(data) > 0:
+            return data[0][0]
+        else:
+            return 'Пользователь зарегистрировался напрямую в боте'
+
     def get_group_info_by_user_id(self, user_id):
         row_id = self.get_group_index_by_user_id(user_id)
         return self.__db.db_read('SELECT `name`, `group`, `chanel` FROM groups WHERE row_id = ?', (row_id, ))[0]
