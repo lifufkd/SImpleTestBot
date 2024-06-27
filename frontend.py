@@ -31,8 +31,11 @@ class Bot_inline_btns:
         return self.__markup
 
     def admin_btns(self):
-        reg = types.InlineKeyboardButton('Добавить группу', callback_data='pre_add_group')
-        self.__markup.add(reg)
+        reg1 = types.InlineKeyboardButton('Добавить группу', callback_data='pre_add_group')
+        reg2 = types.InlineKeyboardButton('Посмотреть заявки администратору', callback_data='get_admin_applications')
+        reg3 = types.InlineKeyboardButton('Посмотреть все группы', callback_data='get_groups')
+        reg4 = types.InlineKeyboardButton('Посмотреть всех пользователей', callback_data='get_users')
+        self.__markup.add(reg1, reg2, reg3, reg4)
         return self.__markup
 
     def add_choise_btns(self):

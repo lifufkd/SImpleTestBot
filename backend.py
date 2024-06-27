@@ -36,6 +36,15 @@ class DbAct:
         row_id = self.get_group_index_by_user_id(user_id)
         return self.__db.db_read('SELECT `name`, `group`, `chanel` FROM groups WHERE row_id = ?', (row_id, ))[0]
 
+    def get_admin_applications(self):
+        return self.__db.db_read('SELECT user_id, content, time, status FROM applications_to_admin', ())
+
+    def get_groups_(self):
+        return self.__db.db_read('SELECT name, row_id, `group`, chanel FROM groups', ())
+
+    def get_users(self):
+        return self.__db.db_read('SELECT user_id, token_balance, first_name, last_name, nick_name, `group` FROM users', ())
+
     def add_group(self, chat_id, is_group):
         if is_group:
             group = True
