@@ -3,12 +3,12 @@
 #                SBR                #
 #               zzsxd               #
 #####################################
+import io
 import json
 import base64
 import platform
 import telebot
 import threading
-import schedule
 import time
 from datetime import datetime, timedelta, timezone
 from threading import Lock
@@ -205,14 +205,14 @@ def main():
                 case 0:
                     if user_input is not None:
                         temp_user_data.temp_data(user_id)[user_id][4] = user_input
-                        bot.send_message(user_id, 'Придумайте пароль')
+                        bot.send_message(user_id, '2. Придумайте пароль')
                         temp_user_data.temp_data(user_id)[user_id][0] = 1
                     else:
                         bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
                 case 1:
                     if user_input is not None:
                         temp_user_data.temp_data(user_id)[user_id][5] = user_input
-                        bot.send_message(user_id, 'Выберите аватарку')
+                        bot.send_message(user_id, '3. Выберите аватарку')
                         temp_user_data.temp_data(user_id)[user_id][0] = 2
                     else:
                         bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
@@ -227,7 +227,7 @@ def main():
                         bot.send_message(user_id, 'Это не фотография! Попробуйте ещё раз')
                 case 3:
                     if user_input == temp_user_data.temp_data(user_id)[user_id][1]:
-                        bot.send_message(user_id, 'Введите ФИО')
+                        bot.send_message(user_id, '4. Введите ФИО')
                         temp_user_data.temp_data(user_id)[user_id][0] = 4
                     else:
                         bot.send_message(user_id, 'Капча не подтверждена')
@@ -235,7 +235,7 @@ def main():
                 case 4:
                     if user_input is not None:
                         temp_user_data.temp_data(user_id)[user_id][7] = user_input
-                        bot.send_message(user_id, 'Введите дату рождения (в формате дд.мм.гггг (12.12.2012))')
+                        bot.send_message(user_id, '5. Введите дату рождения (в формате дд.мм.гггг (12.12.2012))')
                         temp_user_data.temp_data(user_id)[user_id][0] = 5
                     else:
                         bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
@@ -245,7 +245,7 @@ def main():
                             datetime.strptime(user_input, '%d.%m.%Y').date()
                             temp_user_data.temp_data(user_id)[user_id][8] = user_input
                             temp_user_data.temp_data(user_id)[user_id][0] = 6
-                            bot.send_message(user_id, 'Введите город проживания')
+                            bot.send_message(user_id, '6. Введите город проживания')
                         except:
                             bot.send_message(user_id, 'Дата указана в неправильном формате! Попробуйте ещё раз')
                     else:
@@ -254,7 +254,7 @@ def main():
                     if user_input is not None:
                         temp_user_data.temp_data(user_id)[user_id][9] = user_input
                         temp_user_data.temp_data(user_id)[user_id][0] = 7
-                        bot.send_message(user_id, 'Введите вашу дейстующую электронную почту')
+                        bot.send_message(user_id, '7. Введите вашу дейстующую электронную почту')
                     else:
                         bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
                 case 7:
@@ -271,7 +271,7 @@ def main():
                         bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
                 case 8:
                     if user_input == temp_user_data.temp_data(user_id)[user_id][2]:
-                        bot.send_message(user_id, 'Укажите вашу занятость', reply_markup=buttons.question_btns())
+                        bot.send_message(user_id, '8. Укажите вашу занятость', reply_markup=buttons.question_btns())
                     else:
                         bot.send_message(user_id, 'Код не верный, попробуйте еще раз!\n\n'
                                                   'Вы хотите поменять адрес почты?', reply_markup=buttons.email_btns())
@@ -279,14 +279,14 @@ def main():
                     if user_input is not None:
                         temp_user_data.temp_data(user_id)[user_id][13] = user_input
                         temp_user_data.temp_data(user_id)[user_id][0] = 10
-                        bot.send_message(user_id, 'Какая наиболее важная экологическая проблема для Вас?')
+                        bot.send_message(user_id, '11. Какая наиболее важная экологическая проблема для Вас?')
                     else:
                         bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
                 case 10:
                     if user_input is not None:
                         temp_user_data.temp_data(user_id)[user_id][14] = user_input
                         temp_user_data.temp_data(user_id)[user_id][0] = 11
-                        bot.send_message(user_id, 'Иная наиболее важная проблема для Вас?')
+                        bot.send_message(user_id, '12. Иная наиболее важная проблема для Вас?')
                     else:
                         bot.send_message(user_id, 'Это не текст! Попробуйте ещё раз')
                 case 11:
@@ -405,8 +405,9 @@ def main():
                              f'Время отправки заявки: {i[2]}\n' \
                              f'Статус заявки: {status}\n' \
                              f'{"*"*50}\n\n'
-                    for i in split_text_by_period(s, 4096):
-                        bot.send_message(user_id, i)
+                    str_document = io.BytesIO(s.encode('utf-8'))
+                    str_document.name = 'admin_applications.txt'
+                    bot.send_document(user_id, document=str_document)
                 elif command == 'get_groups':
                     data = db_actions.get_groups_()
                     s = str()
@@ -426,8 +427,9 @@ def main():
                              f'Это группа?: {status1}\n' \
                              f'Это канал?: {status2}\n' \
                              f'{"*"*50}\n\n'
-                    for i in split_text_by_period(s, 4096):
-                        bot.send_message(user_id, i)
+                    str_document = io.BytesIO(s.encode('utf-8'))
+                    str_document.name = 'groups.txt'
+                    bot.send_document(user_id, document=str_document)
                 elif command == 'get_users':
                     data = db_actions.get_users()
                     s = str()
@@ -436,12 +438,40 @@ def main():
                         s += f'\n\n{"*"*50}\n' \
                              f'ID пользователя: {i[0]}\n' \
                              f'Баланс пользователя (WOND): {i[1]}\n' \
-                             f'ФИО порльзователя: {i[3]} {i[2]}\n' \
+                             f'ФИО пользователя: {i[3]} {i[2]}\n' \
                              f'Никнейм пользователя: {i[4]}\n' \
                              f'Название группы в которой состоит пользователь: {group_name}\n' \
                              f'{"*"*50}\n\n'
-                    for i in split_text_by_period(s, 4096):
-                        bot.send_message(user_id, i)
+                    str_document = io.BytesIO(s.encode('utf-8'))
+                    str_document.name = 'users.txt'
+                    bot.send_document(user_id, document=str_document)
+                elif command == 'get_user_applications':
+                    data = db_actions.get_user_applications()
+                    s = str()
+                    d = str()
+                    for i in data:
+                        for key, value in json.loads(i[13]).items():
+                            d += f'\n{key} - {value}\n'
+                        s += f'\n\n{"*" * 50}\n' \
+                             f'Тг id пользователя: {i[0]}\n' \
+                             f'Фото пользователя: {i[1]}\n' \
+                             f'Дата регистрации пользователя: {i[15]}\n' \
+                             f'Ник пользователя: {i[2]}\n' \
+                             f'Пароль пользователя: {i[3]}\n' \
+                             f'ФИО пользователя: {i[4]}\n' \
+                             f'День рождения пользователя: {i[5]}\n' \
+                             f'Город проживания пользователя: {i[6]}\n' \
+                             f'Почта пользователя: {i[7]}\n' \
+                             f'Занятость пользователя: {i[8]}\n' \
+                             f'Категория пользователя: {i[9]}\n' \
+                             f'Социальная пользователя: {i[10]}\n' \
+                             f'Экологическая проблема пользователя: {i[11]}\n' \
+                             f'Иная наиболее важная проблема пользователя: {i[12]}\n' \
+                             f'Социальные сети пользователя: \n{d}\n' \
+                             f'{"*" * 50}\n\n'
+                    str_document = io.BytesIO(s.encode('utf-8'))
+                    str_document.name = 'user_applications.txt'
+                    bot.send_document(user_id, document=str_document)
             if db_actions.user_id_registered(user_id):
                 if command == 'profile_back':
                     delete_last_message(user_id)
@@ -494,7 +524,7 @@ def main():
 
             if command == 'reg':
                 temp_user_data.temp_data(user_id)[user_id][0] = 0
-                bot.send_message(user_id, 'Введите свой никнейм')
+                bot.send_message(user_id, '1. Введите свой никнейм')
             elif command == 'y':
                 temp_user_data.temp_data(user_id)[user_id][0] = 7
                 bot.send_message(user_id, 'Введите E-mail')
@@ -506,12 +536,12 @@ def main():
             elif command[:8] == 'question':
                 messages = ['Работаю по найму', 'Являюсь самозанятым, ИП или основателем ООО (АО)', 'Не работаю, получаю социальные пособия', 'Я пенсионер', 'Я учусь']
                 temp_user_data.temp_data(user_id)[user_id][11] = messages[int(command[8:])]
-                bot.send_message(user_id, 'Установите вашу категорию', reply_markup=buttons.second_question())
+                bot.send_message(user_id, '9. Установите вашу категорию', reply_markup=buttons.second_question())
             elif command[:6] == 'vopros':
                 answers = ['Я малоимущий и пассивный пользователь', 'Мне необходимо активное сотрудничество в группе для совместного роста доходов, улучшения уровня жизни, развития бизнеса и благотворительности', 'Я являюсь инвестором, могу приобретать цифровые финансовые активы у других подписчиков и конвертировать для роста прибыли.']
                 temp_user_data.temp_data(user_id)[user_id][12] = answers[int(command[6:])]
                 temp_user_data.temp_data(user_id)[user_id][0] = 9
-                bot.send_message(user_id, 'Какая наиболее важная социальная проблема для вас?')
+                bot.send_message(user_id, '10. Какая наиболее важная социальная проблема для вас?')
 
     bot.infinity_polling(timeout=10, long_polling_timeout = 5)
 

@@ -46,6 +46,12 @@ class DbAct:
     def get_admin_applications(self):
         return self.__db.db_read('SELECT user_id, content, time, status FROM applications_to_admin', ())
 
+    def get_user_applications(self):
+        return self.__db.db_read('SELECT user_id, user_photo, user_nick, user_password, user_fio, user_birthday, '
+                           'user_city, user_email, user_employment, user_category, '
+                           'user_social_problem, user_environmental_problem, user_most_important_problem, '
+                           'social_networks, date_airdrop_wond, date_registration FROM applications', ())
+
     def get_groups_(self):
         return self.__db.db_read('SELECT name, row_id, `group`, chanel FROM groups', ())
 

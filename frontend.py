@@ -35,7 +35,8 @@ class Bot_inline_btns:
         reg2 = types.InlineKeyboardButton('Посмотреть заявки администратору', callback_data='get_admin_applications')
         reg3 = types.InlineKeyboardButton('Посмотреть все группы', callback_data='get_groups')
         reg4 = types.InlineKeyboardButton('Посмотреть всех пользователей', callback_data='get_users')
-        self.__markup.add(reg1, reg2, reg3, reg4)
+        reg5 = types.InlineKeyboardButton('Посмотреть профили всех пользователей', callback_data='get_user_applications')
+        self.__markup.add(reg1, reg2, reg3, reg4, reg5)
         return self.__markup
 
     def add_choise_btns(self):
